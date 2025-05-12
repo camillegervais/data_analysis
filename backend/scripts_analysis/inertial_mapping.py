@@ -1,6 +1,4 @@
-from math import acos, asin
 import time
-from turtle import distance, pos
 import h5py
 import numpy as np
 import os
@@ -13,6 +11,11 @@ django.setup()
 from simracing.models import Lap, Track
 
 def inertial_mapping(lap_id):
+    '''
+    Function to generate the speed and the position of the car throughout the lap, using the inertial mapping technique.
+    Require the lap_id in the database.
+    Require the library h5py to read the telemetry file and numpy to manipulate the data.
+    '''
     lap = Lap.objects.get(id=lap_id)
     h5_file = h5py.File(lap.telemetry_file.path, 'r')
 
@@ -63,13 +66,15 @@ def inertial_mapping(lap_id):
 
     return np.array(position), speed
 
-if __name__ == "__main__":
-    lap_id = 121  # Replace with the actual lap ID you want to process
-    position, speed = inertial_mapping(lap_id)
-    print(position.shape)
+def render_plot(position, speed):
     plt.scatter(position[:, 1], position[:, 2], s=0.5, c=speed[:position.shape[0]]*3.6, cmap='viridis')  # Color by speed
     plt.colorbar(label='Speed (km/h)')  # Add a colorbar to show speed scale
     plt.axis('equal')
     plt.xlabel('X Position')
     plt.ylabel('Y Position')
     plt.show()
+
+if __name__ == "__main__":
+    lap_id = 121  # Replace with the actual lap ID you want to process
+    position, speed = inertial_mapping(lap_id)
+    render_plot(position, speed)
