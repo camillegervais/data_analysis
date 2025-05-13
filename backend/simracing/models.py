@@ -12,6 +12,8 @@ class Track(models.Model):
     length = models.FloatField(default=0)
     country = models.CharField(max_length=255)
     turn = models.IntegerField(default=0)
+    lap_beacons = models.JSONField(default=dict)  # Nouveau champ pour les beacons de tour
+
 
 class Car(models.Model):
     id = models.AutoField(primary_key=True)
