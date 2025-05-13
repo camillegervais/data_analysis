@@ -1,6 +1,6 @@
 from scripts_analysis.inertial_mapping import inertial_mapping, render_plot
 from scripts_analysis.database_explore import explore_database
-from scripts_analysis.traction_circle import traction_circle
+from scripts_analysis.lap_plot import traction_circle, speed_plot
 
 import sys
 
@@ -34,6 +34,12 @@ if __name__ == "__main__":
             else:
                 lap_id = 119
             traction_circle(lap_id)
+        elif sys.argv[1] == 'speed_plot':
+            if len(sys.argv) > 2:
+                lap_id = [int(id) for id in sys.argv[2].split(',')]
+            else:
+                lap_id = [119]
+            speed_plot(lap_id)
                 
     else:
         print("Please give the name of the script you want to execute")

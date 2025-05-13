@@ -67,6 +67,7 @@ class Lap(models.Model):
     valid_lap = models.BooleanField(default=True)
     tyre_set = models.IntegerField(default=0)
     telemetry_file = models.FileField(upload_to='telemetry_files/', null=True, blank=True)  # Nouveau champ pour le fichier HDF5
+    lap_beacons = models.JSONField(default=dict)  # Nouveau champ pour les beacons de tour
 
     
 
