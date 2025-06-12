@@ -1,5 +1,7 @@
 from .models import Lap
+import json
 
+# list of data used by the model
 def lapFormating(lap: Lap):
     return {
         'id': lap.id,

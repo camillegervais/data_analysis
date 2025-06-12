@@ -34,17 +34,36 @@
 
 % Sections principales (à personnaliser selon vos besoins)
 \chapter{Introduction}
+
 \section{Contexte du projet}
+
+Dans le cadre de la course automobile, les facteurs de performances sont souvent retrouvés dans deux domaines: la performance de la voiture ou le pilotage. Afin d'avoir un impact sur ces performances entre deux courses ou deux sessions d'une même course, il est essentiel d'analyser les données de télémétrie des véhicules.\\
+
+Cependant, le temps entre deux sessions de course est faible et les quantités de données à analyser sont importantes. Il est donc nécessaire de mettre en place un système d'analyse de télémétrie qui permet de fournir des indicateurs pertinents et exploitables rapidement. Pour cela, il faut laisser la liberté à l'ingénieur de choisir le degré d'analyse qui est faite par le logiciel pour être le plus pertinent sur la durée d'analyse dont il dispose.
 
 \subsection{Volonté de l'entreprise}
 
+Nova SimRacing souhaite développer un système d'analyse de télémétrie qui permet aux ingénieurs de course d'obtenir des indicateurs pertinents sur les performances des véhicules. Ce système doit être capable de traiter une grande quantité de données en un temps réduit, tout en offrant une flexibilité dans le niveau d'analyse effectué. Ce système doit pouvoir s'adapter à de nombreuses sources de données et doit permettre à l'entreprise exploitante de faire correspondre son format de données de télémétrie avec les systèmes mis en place par le logiciel développé.\\
+
+Le logiciel doit également être capable de s'adapter à différents types de véhicules, circuits, pilotes et structure d'écurie. En effet l'idée provient de la volonté d'anayser des données de simracing mais le logiciel doit pouvoir s'adapter à des données réelles, celles-ci apportant leur lot de défis.
+
 \subsection{Problématique}
+
+Comment développer un système d'analyse de télémétrie qui permet aux ingénieurs de course d'obtenir des indicateurs pertinents sur les performances des véhicules, tout en étant capable de traiter une grande quantité de données en un temps réduit et en offrant une flexibilité dans le niveau d'analyse effectué ?
 
 \section{Objectifs}
 
-\subsection{Objectif principal}
-
-\subsection{Objectifs secondaires}
+\begin{itemize}
+    \item Automatiser l'importation et le traitement des données de télémétrie (CSV, MoTeC).
+    \item Extraire les métriques essentielles au diagnostic de performance.
+    \item Détecter les événements dynamiques tels que blocage de roue, perte d'adhérence, bottoming, etc.
+    \item Fournir un rapport multi-niveaux :
+    \begin{itemize}
+        \item Niveau 1 : Données brutes et métriques clés
+        \item Niveau 2 : Détection d’événements et analyse comportementale
+        \item Niveau 3 : Recommandations de changements de pilotage et de setup via un LLM (Large Language Model)
+    \end{itemize}
+\end{itemize}
 
 \subsection{Critères de succès}
 
@@ -56,9 +75,27 @@
 
 \subsubsection{Liste des données analysées}
 
+Le fichier d'entrée est un CSV contenant les colonnes suivantes :
+\begin{itemize}
+    \item \texttt{timestamp}, \texttt{lap\_number}
+    \item \texttt{throttle\_position}, \texttt{brake\_pressure}, \texttt{steering\_angle}
+    \item \texttt{wheel\_speed\_fl/fr/rl/rr}, \texttt{damper\_velocity\_fl/fr/rl/rr}
+    \item \texttt{suspension\_travel\_fl/fr/rl/rr}
+    \item \texttt{yaw\_rate}, \texttt{longitudinal\_accel}, \texttt{lateral\_accel}
+    \item \texttt{tire\_temp\_fl/fr/rl/rr}, \texttt{tire\_pressure\_fl/fr/rl/rr}
+    \item \texttt{rpm}, \texttt{gear}
+    \item \texttt{gps\_x}, \texttt{gps\_y}
+\end{itemize}
+
 \subsection{Analyse des données}
 
 \subsection{Les rendus par couche}
+
+\begin{itemize}
+    \item Rapport PDF structuré (LaTeX) ou interface web (Dash/Streamlit)
+    \item Visualisations : G-G plot, heatmaps pneus, timeline d’événements
+    \item Recommandations : réglages (barres, amortisseurs, pressions) et conseil de conduite
+\end{itemize}
 
 \subsubsection{Descriptions des indicateurs rendus par couche}
 
@@ -80,9 +117,44 @@
 
 \section{Technologies utilisées par couches}
 
+\subsection{Couche 1: Ingestion \& Prétraitement}
+
+\begin{itemize}
+    \item Nettoyage des données, détection de tours
+    \item Lissage (Kalman/Savitzky-Golay), synchronisation
+    \item Segmentation des tours et secteurs
+\end{itemize}
+
+\subsection{Couche 2: Analyse Métrologique \& Événementielle}
+
+\begin{itemize}
+    \item Extraction des métriques (vitesse, accélérations, usages freins/gaz)
+    \item Modèles ML pour détecter les événements (blocage, survirage, oscillations damper)
+    \item Algorithmes utilisés : RandomForest, SVM, DBSCAN, IsolationForest
+\end{itemize}
+
+\subsection{Couche 3: Génération d'Analyses (LLM)}
+
+\begin{itemize}
+    \item Utilisation de GPT-4 ou LLaMA 3 pour générer des recommandations
+    \item Entrée : structure JSON des événements, métriques, tendance pneus
+    \item Sortie : texte naturel de recommandations de setup et coaching pilote
+    \item Le LLM doit être capable de comprendre le contexte des données et de fournir des recommandations adaptées au type de véhicule, circuit et pilote.
+\end{itemize}
+
 \chapter{MVP visés}
 
 \section{MVP 1}
+
+\chapter{Améliorations futures}
+\begin{itemize}
+    \item Boucle de feedback avec notations des ingénieurs
+    \item Fine-tuning du LLM à partir des retours terrains
+    \item Intégration de nouvelles sources de données (telles que les données GPS, les données de télémétrie avancées, etc.)
+    \item Amélioration continue des algorithmes de détection d'événements et d'analyse comportementale
+    \item Intégration avec bases de données de circuits et météo
+    \item Développement d'une interface utilisateur plus intuitive et interactive
+\end{itemize}
 
 
 

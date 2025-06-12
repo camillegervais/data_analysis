@@ -1,5 +1,5 @@
 from scripts_analysis.inertial_mapping import inertial_mapping, render_plot
-from scripts_analysis.database_explore import explore_database
+from scripts_analysis.database_explore import explore_database, exportCSVLap, exportJsonLap, export_lap_data
 from scripts_analysis.lap_plot import traction_circle, speed_plot, set_lap_beacons
 
 import sys
@@ -75,6 +75,28 @@ if __name__ == "__main__":
                 set_lap_beacons(track_id, beacons)
             else:
                 print("Enter the track ID and the beacons")
+        elif sys.argv[1] == 'export_csv':
+            if len(sys.argv) > 2:
+                lap_id = int(sys.argv[2])
+                lap = Lap.objects.get(id=lap_id)
+                exportCSVLap(lap)
+            else:
+                print("Enter the lap ID you want to export")
+        elif sys.argv[1] == 'export_json':
+            if len(sys.argv) > 2:
+                lap_id = int(sys.argv[2])
+                lap = Lap.objects.get(id=lap_id)
+                print(exportJsonLap(lap))
+            else:
+                print("Enter the lap ID you want to export")
+        elif sys.argv[1] == 'export_lap':
+            if len(sys.argv) > 2:
+                lap_id = int(sys.argv[2])
+                lap = Lap.objects.get(id=lap_id)
+                json_path, csv_path = export_lap_data(lap)
+                print(f"Lap data exported to {json_path} and {csv_path}")
+            else:
+                print("Enter the lap ID you want to export")
         elif sys.argv[1] == 'debug':
             debug()
                 

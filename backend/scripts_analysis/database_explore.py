@@ -1,12 +1,14 @@
 import os
 import django
 import numpy as np
+import json
 from scripts_analysis.utils import format_lap_time, format_temperature
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
 django.setup()
 
 from simracing.models import Lap, Track, Car, Session
+from simracing.data_formating import lapFormating
 
 def explore_database(object_name):
     '''
@@ -53,3 +55,53 @@ def explore_database(object_name):
             print('-------------------')
     else:
         print('Object not found in the database')
+
+def exportJsonLap(lap):
+    """
+    Function to export a lap in JSON format.
+    """
+    lap_data = lapFormating(lap)
+    lap_data['date'] = lap.date.strftime('%Y-%m-%d %H:%M:%S') if lap.date else None
+    lap_data['csv_file'] = lap.telemetry_file.path.replace('.h5', '.csv') if lap.telemetry_file else None
+    json_path = lap_data['csv_file'].replace('.csv', '.json')
+    with open(json_path, 'w') as f:
+        json.dump(lap_data, f)
+    return json_path
+
+def exportCSVLap(lap):
+    """
+    Function to export the data of a lap stored in a h5 file in a CSV format.
+    """
+    import h5py
+    import pandas as pd
+
+    lap = Lap.objects.get(id=lap.id)
+    h5_file = h5py.File(lap.telemetry_file.path, 'r')
+
+    data = {}
+
+    # Extract data from the h5 file
+    for key in h5_file.keys():
+        if len(h5_file[key].shape) > 1:
+            for i in range(h5_file[key].shape[1]):
+                data[f'{key}_{i}'] = h5_file[key][:, i]
+        else:
+            data[key] = h5_file[key][:]
+
+    # Create a DataFrame
+    df = pd.DataFrame(data)
+
+    # Export to CSV
+    csv_path = lap.telemetry_file.path.replace('.h5', '.csv')
+    df.to_csv(csv_path, index=False)
+
+    h5_file.close()
+    return csv_path
+
+def export_lap_data(lap):
+    """
+    Function to export lap data in both JSON and CSV formats.
+    """
+    json_path = exportJsonLap(lap)
+    csv_path = exportCSVLap(lap)
+    return json_path, csv_path

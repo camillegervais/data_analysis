@@ -29,13 +29,6 @@ asm = accSharedMemory()
 
 sm = asm.read_shared_memory()
 
-# j = pyvjoy.VJoyDevice(1)
-
-# baud = 115200
-# arduino = serial.Serial(port = "COM7", baudrate = baud, timeout=1)
-
-# time.sleep(1)
-
 print("Wait for shared memory")
 
 while sm is None:
