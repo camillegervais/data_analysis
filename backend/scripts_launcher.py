@@ -4,6 +4,28 @@ from scripts_analysis.lap_plot import traction_circle, speed_plot, set_lap_beaco
 
 import sys
 
+from simracing.models import Track
+
+def debug():
+    """ Function to apply modifications to the database"""
+
+    # correctif de l'attribution des temps de secteurs
+    
+    # assigner un exemples de beacons aux deux circuits dans la base de données
+    tracks = Track.objects.all()
+    for track in tracks:
+        beacons = {
+            'start': (0, 200),
+            'T1': (200, 650),
+            'T2': (650, 1000),
+            'T3': (1000, 1500),
+            'T4': (1500, 2000),
+            'T5': (2000, 2500),
+            'end': (2500, track.length),
+        }
+        set_lap_beacons(track.id, beacons)
+    pass
+
 if __name__ == "__main__":
     import os
     import django
@@ -29,11 +51,13 @@ if __name__ == "__main__":
             else:
                 print("Enter the name of the object you want to explore")
         elif sys.argv[1] == 'traction_circle':
-            if len(sys.argv) > 2:
+            if len(sys.argv) > 3:
                 lap_id = int(sys.argv[2])
+                beacons = sys.argv[3]
             else:
                 lap_id = 119
-            traction_circle(lap_id)
+                beacons = 'start'
+            traction_circle(lap_id, beacons)
         elif sys.argv[1] == 'speed_plot':
             if len(sys.argv) > 2:
                 lap_id = [int(id) for id in sys.argv[2].split(',')]
@@ -51,6 +75,8 @@ if __name__ == "__main__":
                 set_lap_beacons(track_id, beacons)
             else:
                 print("Enter the track ID and the beacons")
+        elif sys.argv[1] == 'debug':
+            debug()
                 
     else:
         print("Please give the name of the script you want to execute")

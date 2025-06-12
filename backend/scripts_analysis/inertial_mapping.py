@@ -61,7 +61,7 @@ def inertial_mapping(lap_id):
     beacons = json.loads(track.lap_beacons)
     beacons_position = []
     for beacon in beacons.values():
-        beacon_index = np.argmin(np.abs(distance - beacon))
+        beacon_index = np.argmin(np.abs(distance - beacon[0]))
         beacons_position.append(position[beacon_index])
 
     h5_file.close()

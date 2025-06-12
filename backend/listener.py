@@ -45,7 +45,7 @@ print("Shared memory found")
 
 current_lap = sm.Graphics.completed_lap
 
-channel_layer = get_channel_layer()
+# channel_layer = get_channel_layer()
 
 sectors = []
 
@@ -85,7 +85,7 @@ while True:
         #append sector times during the lap
         if sm.Graphics.current_sector_index != current_sector:
             current_sector = sm.Graphics.current_sector_index
-            sectors.append(sm.Graphics.last_sector_time)
+            sectors.append(sm.Graphics.current_time)
 
         #handle the change of tyres and the number of laps on a tyre set
         if sm.Graphics.current_tyre_set == current_tyre_set:
@@ -98,7 +98,7 @@ while True:
         if current_lap != sm.Graphics.completed_lap:
 
             current_lap = sm.Graphics.completed_lap
-            current_sector = 1
+            current_sector = sm.Graphics.current_sector_index
             current_start_distance = sm.Graphics.distance_traveled
             current_start_time = sm.Graphics.current_time
 
@@ -116,6 +116,14 @@ while True:
             # Réinitialiser les tableaux pour le nouveau tour
             telemetry_data = {key: [] for key in telemetry_data}
 
+            print(f"Sectors: {sectors}")
+
+            # Mise en forme des temps de secteur
+            sectors = [
+                sectors[0],
+                sectors[1] - sectors[0],
+                sm.Graphics.last_time - sectors[1]
+            ]
 
             # Ajouter le chemin du fichier HDF5 à l'objet Lap
             info_lap = {
@@ -150,23 +158,23 @@ while True:
 
             sectors = []  # Réinitialiser les secteurs pour le nouveau tour
 
-            #send data to channel for follow session
-            async_to_sync(channel_layer.group_send)(
-                "follow-session",
-                {
-                    "type": "add.lap",
-                    "id": Lap.objects.filter(session=Session.objects.all().order_by('id').last()).count()+1,
-                    "time": sm.Graphics.last_time,
-                    "temp": sm.Physics.air_temp,
-                    "fuel": sm.Physics.fuel,
-                    "compound": "dry_compound",
-                    "session_id": Session.objects.all().order_by('id').last().id,
-                    "lap_number": sm.Graphics.completed_lap,
-                    "track": Lap.objects.all().order_by('id').last().session.track.name,
-                    "driver": Lap.objects.all().order_by('id').last().session.driver.name,
-                },
-            )
-            print('Lap pushed')
+            # #send data to channel for follow session
+            # async_to_sync(channel_layer.group_send)(
+            #     "follow-session",
+            #     {
+            #         "type": "add.lap",
+            #         "id": Lap.objects.filter(session=Session.objects.all().order_by('id').last()).count()+1,
+            #         "time": sm.Graphics.last_time,
+            #         "temp": sm.Physics.air_temp,
+            #         "fuel": sm.Physics.fuel,
+            #         "compound": "dry_compound",
+            #         "session_id": Session.objects.all().order_by('id').last().id,
+            #         "lap_number": sm.Graphics.completed_lap,
+            #         "track": Lap.objects.all().order_by('id').last().session.track.name,
+            #         "driver": Lap.objects.all().order_by('id').last().session.driver.name,
+            #     },
+            # )
+            # print('Lap pushed')
 
         # Ajouter les données de télémétrie dans les tableaux NumPy
         telemetry_data["tyre_pressure"].append([

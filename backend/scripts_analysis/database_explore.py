@@ -19,6 +19,9 @@ def explore_database(object_name):
         for lap in laps:
             print(f'Lap ID: {lap.id}, Track: {lap.session.track.name}, Driver: {lap.session.driver.name}')
             print(f'Lap Time: {format_lap_time(lap.time)}')
+            print(f'Sector 1: {format_lap_time(lap.sector1)}')
+            print(f'Sector 2: {format_lap_time(lap.sector2)}')
+            print(f'Sector 3: {format_lap_time(lap.sector3)}')
             print(f'Telemetry file: {lap.telemetry_file.path}')
             print(f'Compound: {lap.compound.name}')
             print(f'Fuel: {lap.fuel}')
