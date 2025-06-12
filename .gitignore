@@ -1,3 +1,6 @@
 env/
 backend/backend/__pycache__/
-backend/backend/scripts_analysis/__pycache__/
+backend/scripts_analysis/__pycache__/
+cdc/out
+backend/telemetry_data
+frontend/node_modules/
