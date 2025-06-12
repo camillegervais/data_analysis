@@ -70,6 +70,9 @@ telemetry_data = {
     "brake_temp": [],
     "time": [],
     "distance": [],
+    "yaw_angle": [],
+    "steering_angle": [],
+    "suspension_travel": [],
 }
 
 while True:
@@ -215,6 +218,14 @@ while True:
         ])
         telemetry_data["time"].append(sm.Graphics.current_time - current_start_time)
         telemetry_data["distance"].append(sm.Graphics.distance_traveled - current_start_distance)
+        telemetry_data["yaw_angle"].append(sm.Physics.heading)
+        telemetry_data["steering_angle"].append(sm.Physics.steer_angle)
+        telemetry_data["suspension_travel"].append([
+            sm.Physics.suspension_travel.front_left,
+            sm.Physics.suspension_travel.front_right,
+            sm.Physics.suspension_travel.rear_left,
+            sm.Physics.suspension_travel.rear_right
+        ])
 
     time.sleep(0.02)
 

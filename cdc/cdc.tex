@@ -77,14 +77,37 @@ Comment développer un système d'analyse de télémétrie qui permet aux ingén
 
 Le fichier d'entrée est un CSV contenant les colonnes suivantes :
 \begin{itemize}
-    \item \texttt{timestamp}, \texttt{lap\_number}
-    \item \texttt{throttle\_position}, \texttt{brake\_pressure}, \texttt{steering\_angle}
-    \item \texttt{wheel\_speed\_fl/fr/rl/rr}, \texttt{damper\_velocity\_fl/fr/rl/rr}
-    \item \texttt{suspension\_travel\_fl/fr/rl/rr}
-    \item \texttt{yaw\_rate}, \texttt{longitudinal\_accel}, \texttt{lateral\_accel}
-    \item \texttt{tire\_temp\_fl/fr/rl/rr}, \texttt{tire\_pressure\_fl/fr/rl/rr}
-    \item \texttt{rpm}, \texttt{gear}
-    \item \texttt{gps\_x}, \texttt{gps\_y}
+    \item \texttt{tyre\_pressure}, \texttt{tyre\_temperature}
+    \item \texttt{speed}, \texttt{g\_force}, \texttt{time}, \texttt{distance}, \texttt{yaw\_angle}
+    \item \texttt{throttle}, \texttt{brake}, \texttt{steering\_angle}
+    \item \texttt{air\_temp}, \texttt{rpm}, \texttt{gear}, \texttt{fuel}, \texttt{brake\_balance}, \texttt{brake\_temp}
+    \item \texttt{wheel\_speed}, \texttt{wheel\_slip}, \texttt{suspension\_travel}
+\end{itemize}
+
+Ces données sont mises sous forme de séries temporelles, avec le même échantillonnage pour toutes les séries.\\
+
+
+Le fichier JSON d'entrée contient des données ponctuelles sur le tour, les données sont:
+
+\begin{itemize}
+    \item \texttt{session} : Identifiant de la session
+    \item \texttt{time} : Temps au tour
+    \item \texttt{compound} : Type de composé pneumatique
+    \item \texttt{date} : Date de la session
+    \item \texttt{temperature} : Température ambiante
+    \item \texttt{fuel} : Niveau de carburant
+    \item \texttt{tyre\_pressure\_fr/fl/rr/rl} : Pressions des pneus
+    \item \texttt{tyre\_temperature\_fr/fl/rr/rl} : Températures des pneus
+    \item \texttt{usure\_plaquette} : Usure moyenne des plaquettes de frein
+    \item \texttt{lap\_type} : Type de tour (Completed, etc.)
+    \item \texttt{lap\_index\_session} : Index du tour dans la session
+    \item \texttt{lap\_index\_tyre} : Index du tour pour le train de pneus
+    \item \texttt{sector1/2/3} : Temps des secteurs
+    \item \texttt{tc\_level} : Niveau de contrôle de traction
+    \item \texttt{abs\_level} : Niveau d'ABS
+    \item \texttt{valid\_lap} : Validité du tour
+    \item \texttt{tyre\_set} : Numéro du train de pneus
+    \item \texttt{telemetry\_file} : Chemin du fichier de télémétrie h5 stocké dans le dossier backend
 \end{itemize}
 
 \subsection{Analyse des données}
