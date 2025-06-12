@@ -112,6 +112,17 @@ Le fichier JSON d'entrée contient des données ponctuelles sur le tour, les don
 
 \subsection{Analyse des données}
 
+Nous allons ici détailler les analyses faites sur les données de télémétrie dans toutes les couches d'analyse.
+
+\subsubsection{Couche 1 : Ingestion \& Prétraitement}
+\begin{itemize}
+    \item Nettoyage des données : suppression des valeurs aberrantes, gestion des données manquantes.
+    \item Détection de tours : identification des tours complets dans les données.
+    \item Lissage des données : utilisation de filtres Kalman ou Savitzky-Golay pour réduire le bruit.
+    \item Extraction des métriques de base des données lissées : moyenne, écart-type, min, max, etc.
+\end{itemize}
+
+\subsubsection{Couche 2 : Analyse Métrologique \& Événementielle}
 \subsection{Les rendus par couche}
 
 \begin{itemize}

@@ -99,6 +99,9 @@ if __name__ == "__main__":
                 print("Enter the lap ID you want to export")
         elif sys.argv[1] == 'debug':
             debug()
+        else:
+            print(f"Unknown script: {sys.argv[1]}")
+            print("Available scripts: inertial_mapping, explore_database, traction_circle, speed_plot, beacons, export_csv, export_json, export_lap, debug")
                 
     else:
         print("Please give the name of the script you want to execute")

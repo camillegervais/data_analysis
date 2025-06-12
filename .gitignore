@@ -4,3 +4,4 @@ backend/scripts_analysis/__pycache__/
 cdc/out
 backend/telemetry_data
 frontend/node_modules/
+model/telemetry_data
