@@ -1,10 +1,10 @@
 from scripts_analysis.inertial_mapping import inertial_mapping, render_plot
-from scripts_analysis.database_explore import explore_database, exportCSVLap, exportJsonLap, export_lap_data
+from scripts_analysis.database_explore import explore_database, exportCSVLap, exportJsonLap, export_lap_data, export_session_data
 from scripts_analysis.lap_plot import traction_circle, speed_plot, set_lap_beacons
 
 import sys
 
-from simracing.models import Track
+from simracing.models import Track, Driver, Session, Car
 
 def debug():
     """ Function to apply modifications to the database"""
@@ -12,19 +12,11 @@ def debug():
     # correctif de l'attribution des temps de secteurs
     
     # assigner un exemples de beacons aux deux circuits dans la base de données
-    tracks = Track.objects.all()
-    for track in tracks:
-        beacons = {
-            'start': (0, 200),
-            'T1': (200, 650),
-            'T2': (650, 1000),
-            'T3': (1000, 1500),
-            'T4': (1500, 2000),
-            'T5': (2000, 2500),
-            'end': (2500, track.length),
-        }
-        set_lap_beacons(track.id, beacons)
-    pass
+    track = Track.objects.get(name='SPA')
+    driver = Driver.objects.get(name="Camille")
+    car = Car.objects.get(name="McLaren 720S GT3")
+    session = Session.objects.create(driver=driver, track=track, car=car, date='2023-10-01', weather='Sunny', session_type='Practice')
+    session.save()
 
 if __name__ == "__main__":
     import os
@@ -97,6 +89,12 @@ if __name__ == "__main__":
                 print(f"Lap data exported to {json_path} and {csv_path}")
             else:
                 print("Enter the lap ID you want to export")
+        elif sys.argv[1] == 'export_session':
+            if len(sys.argv) > 2:
+                session_id = int(sys.argv[2])
+                export_session_data(session_id)
+            else:
+                print("Enter the session ID you want to export")
         elif sys.argv[1] == 'debug':
             debug()
         else:

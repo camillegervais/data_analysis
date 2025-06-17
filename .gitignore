@@ -3,5 +3,11 @@ backend/backend/__pycache__/
 backend/scripts_analysis/__pycache__/
 cdc/out
 backend/telemetry_data
+backend/session_data
 frontend/node_modules/
 model/telemetry_data
+model/session_data
+model/level_1/__pycache__
+model/level_1/report
+model/level_1/template/out
+backend/db.sqlite3

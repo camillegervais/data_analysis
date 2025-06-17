@@ -81,7 +81,7 @@ Le fichier d'entrée est un CSV contenant les colonnes suivantes :
     \item \texttt{speed}, \texttt{g\_force}, \texttt{time}, \texttt{distance}, \texttt{yaw\_angle}
     \item \texttt{throttle}, \texttt{brake}, \texttt{steering\_angle}
     \item \texttt{air\_temp}, \texttt{rpm}, \texttt{gear}, \texttt{fuel}, \texttt{brake\_balance}, \texttt{brake\_temp}
-    \item \texttt{wheel\_speed}, \texttt{wheel\_slip}, \texttt{suspension\_travel}
+    \item \texttt{wheel\_speed}, \texttt{slip\_ratio}, \texttt{slip\_angle}, \texttt{suspension\_travel}
 \end{itemize}
 
 Ces données sont mises sous forme de séries temporelles, avec le même échantillonnage pour toutes les séries.\\
@@ -94,7 +94,8 @@ Le fichier JSON d'entrée contient des données ponctuelles sur le tour, les don
     \item \texttt{time} : Temps au tour
     \item \texttt{compound} : Type de composé pneumatique
     \item \texttt{date} : Date de la session
-    \item \texttt{temperature} : Température ambiante
+    \item \texttt{air\_temp} : Température ambiante
+    \item \texttt{road\_temp} : Température de la piste
     \item \texttt{fuel} : Niveau de carburant
     \item \texttt{tyre\_pressure\_fr/fl/rr/rl} : Pressions des pneus
     \item \texttt{tyre\_temperature\_fr/fl/rr/rl} : Températures des pneus
@@ -105,6 +106,7 @@ Le fichier JSON d'entrée contient des données ponctuelles sur le tour, les don
     \item \texttt{sector1/2/3} : Temps des secteurs
     \item \texttt{tc\_level} : Niveau de contrôle de traction
     \item \texttt{abs\_level} : Niveau d'ABS
+    \item \texttt{engine\_map} : Carte moteur utilisée
     \item \texttt{valid\_lap} : Validité du tour
     \item \texttt{tyre\_set} : Numéro du train de pneus
     \item \texttt{telemetry\_file} : Chemin du fichier de télémétrie h5 stocké dans le dossier backend
@@ -122,6 +124,14 @@ Nous allons ici détailler les analyses faites sur les données de télémétrie
     \item Extraction des métriques de base des données lissées : moyenne, écart-type, min, max, etc.
 \end{itemize}
 
+Pour la couche 1, en plus de pouvoir sortir un rapport avec les métriques de base, l'affichage de données de base (speed plot sur le meilleur tour par exemple), elle permet de préparer les données pour les couches suivantes.\\
+
+Pour cela nous allons donc coder les fonctions de bases de mise en forme des donneés pour pouvoir les appliquer ou non sur des données plus tard dans l'analyse.
+En effet, ces filtrages ne sont pas toujours nécessaires car des pertes d'informations ont lieu lors de ces filtrages et ses informations sont nécessaires dans certaines analyses.\\
+
+Nous allons donc créer un module de prétraitement des données qui permettra de filtrer les données en fonction des besoins de l'analyse. Ce module sera utilisé pour faire le rapport de niveau 1.
+
+
 \subsubsection{Couche 2 : Analyse Métrologique \& Événementielle}
 \subsection{Les rendus par couche}
 
@@ -132,6 +142,21 @@ Nous allons ici détailler les analyses faites sur les données de télémétrie
 \end{itemize}
 
 \subsubsection{Descriptions des indicateurs rendus par couche}
+
+\subsection{Couche 1 : Ingestion \& Prétraitement}
+
+Le rapport de niveau 1 doit contenir les éléments suivants :
+\begin{itemize}
+    \item Les informations de base relatives à la session (date, circuit, conditions météo, etc.)
+    \item Les métriques de base calculées sur les données lissées :
+    \begin{itemize}
+        \item Vitesse moyenne, maximale, minimale
+        \item Accélération moyenne, maximale, minimale
+        \item Usure des pneus (pression et température) et influence sur le temps au tour
+        \item Temps au tour et par secteur pour tous les tours avec meilleurs et pires secteurs
+    \end{itemize}
+    \item Les performances de la session en terme de données : nombre de tours valides, proportions de tours valides\dots
+\end{itemize} 
 
 \section{Interactions avec les parties prenantes}
 

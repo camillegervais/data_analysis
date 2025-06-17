@@ -57,7 +57,6 @@ telemetry_data = {
     "tyre_pressure": [],
     "tyre_temperature": [],
     "fuel": [],
-    "air_temp": [],
     "speed": [],
     "gear": [],
     "g_force": [],
@@ -66,7 +65,8 @@ telemetry_data = {
     "brake_balance": [],
     "rpm": [],
     "wheel_speed": [],
-    "wheel_slip": [],
+    "slip_ratio": [],
+    "slip_angle": [],
     "brake_temp": [],
     "time": [],
     "distance": [],
@@ -127,7 +127,8 @@ while True:
                 'time': sm.Graphics.last_time,
                 'compound': Compound.objects.get(name='dry_compound'),
                 'date': datetime.date.today(),
-                'temperature': sm.Physics.air_temp,
+                'air_temp': sm.Physics.air_temp,
+                'road_temp': sm.Physics.road_temp,
                 'fuel': sm.Physics.fuel,
                 'tyre_pressure_fr': sm.Physics.wheel_pressure.front_right,
                 'tyre_pressure_fl': sm.Physics.wheel_pressure.front_left,
@@ -146,6 +147,7 @@ while True:
                 'sector3': sectors[2],
                 'tc_level': sm.Graphics.tc_level,
                 'abs_level': sm.Graphics.abs_level,
+                'engine_map': sm.Graphics.engine_map,
                 'valid_lap': sm.Graphics.is_valid_lap,
                 'tyre_set': current_tyre_set,
                 'telemetry_file': current_h5_filepath  # Nouveau champ pour le fichier HDF5
@@ -186,7 +188,6 @@ while True:
             sm.Physics.tyre_core_temp.rear_right
         ])
         telemetry_data["fuel"].append(sm.Physics.fuel)
-        telemetry_data["air_temp"].append(sm.Physics.air_temp)
         telemetry_data["speed"].append(sm.Physics.speed_kmh)
         telemetry_data["gear"].append(sm.Physics.gear)
         telemetry_data["g_force"].append([
@@ -204,11 +205,17 @@ while True:
             sm.Physics.wheel_angular_s.rear_left,
             sm.Physics.wheel_angular_s.rear_right
         ])
-        telemetry_data["wheel_slip"].append([
-            sm.Physics.wheel_slip.front_left,
-            sm.Physics.wheel_slip.front_right,
-            sm.Physics.wheel_slip.rear_left,
-            sm.Physics.wheel_slip.rear_right
+        telemetry_data["slip_ratio"].append([
+            sm.Physics.slip_ratio.front_left,
+            sm.Physics.slip_ratio.front_right,
+            sm.Physics.slip_ratio.rear_left,
+            sm.Physics.slip_ratio.rear_right
+        ])
+        telemetry_data["slip_angle"].append([
+            sm.Physics.slip_angle.front_left,
+            sm.Physics.slip_angle.front_right,
+            sm.Physics.slip_angle.rear_left,
+            sm.Physics.slip_angle.rear_right
         ])
         telemetry_data["brake_temp"].append([
             sm.Physics.brake_temp.front_left,

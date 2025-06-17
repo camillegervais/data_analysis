@@ -7,7 +7,7 @@ from scripts_analysis.utils import format_lap_time, format_temperature
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
 django.setup()
 
-from simracing.models import Lap, Track, Car, Session
+from simracing.models import Lap, Track, Car, Session, Driver
 from simracing.data_formating import lapFormating
 
 def explore_database(object_name):
@@ -27,7 +27,7 @@ def explore_database(object_name):
             print(f'Telemetry file: {lap.telemetry_file.path}')
             print(f'Compound: {lap.compound.name}')
             print(f'Fuel: {lap.fuel}')
-            print(f'Temperature: {format_temperature(lap.temperature)}')
+            print(f'Temperature: {format_temperature(lap.air_temp)}')
             print('-------------------')
     elif object_name.lower() == 'track':
         tracks = Track.objects.all()
@@ -52,6 +52,12 @@ def explore_database(object_name):
             print(f'Track: {session.track.name}, Car: {session.car.name}')
             print(f'Date: {session.date}, Weather: {session.weather}')
             print(f'Session Type: {session.session_type}')
+            print('-------------------')
+    elif object_name.lower() == 'driver':
+        drivers = Driver.objects.all()
+        for driver in drivers:
+            print(f'Driver ID: {driver.id}, Name: {driver.name}')
+            print(f'Age: {driver.age}')
             print('-------------------')
     else:
         print('Object not found in the database')
@@ -105,3 +111,22 @@ def export_lap_data(lap):
     json_path = exportJsonLap(lap)
     csv_path = exportCSVLap(lap)
     return json_path, csv_path
+
+def export_session_data(session_id):
+    """
+    Function to export all the information stored in the session object in the databse at the json format.
+    """
+    session = Session.objects.get(id=session_id)
+    session_data = {
+        'id': session.id,
+        'driver': session.driver.name,
+        'track': session.track.name,
+        'car': session.car.name,
+        'date': session.date.strftime('%Y-%m-%d %H:%M:%S') if session.date else None,
+        'weather': session.weather,
+        'session_type': session.session_type,
+    }
+    json_path = f'./session_data/session_{session_id}_data.json'
+    with open(json_path, 'w') as f:
+        json.dump(session_data, f)
+    return json_path

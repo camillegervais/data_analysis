@@ -46,7 +46,8 @@ class Lap(models.Model):
     time = models.FloatField(default=0)
     compound = models.ForeignKey(Compound, on_delete=models.CASCADE)
     date = models.DateField(default=0)
-    temperature = models.FloatField(default=0)
+    air_temp = models.FloatField(default=0)
+    road_temp = models.FloatField(default=0)
     comments = models.TextField()
     fuel = models.IntegerField(default=0)
     tyre_pressure_fr = models.FloatField(default=0)
@@ -66,6 +67,7 @@ class Lap(models.Model):
     sector3 = models.IntegerField(default=0)
     tc_level = models.IntegerField(default=0)
     abs_level = models.IntegerField(default=0)
+    engine_map = models.IntegerField(default=0)
     valid_lap = models.BooleanField(default=True)
     tyre_set = models.IntegerField(default=0)
     telemetry_file = models.FileField(upload_to='telemetry_files/', null=True, blank=True)  # Nouveau champ pour le fichier HDF5

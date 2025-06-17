@@ -1,0 +1,113 @@
+
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{titlesec}
+\titleformat{\section}{\normalfont\Large\bfseries}{\thesection}{1em}{}
+
+\title{\textbf{Rapport Niveau 1 -- Analyse Télémétrique de Base}}
+\author{Motive Dynamics Motorsport Engineering}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{Résumé de la Session}
+
+Données permettant d'identifier la séances parmi d'autres.
+
+\begin{itemize}
+    \item \textbf{Circuit :} [Nom du circuit]
+    \item \textbf{Date :} [Date]
+    \item \textbf{Session :} [Essais Libres / Qualification / Course]
+    \item \textbf{Voiture :} [Identifiant voiture]
+    \item \textbf{Pilote :} [Nom pilote]
+\end{itemize}
+
+\section{Métriques de Base de la session:}
+
+Données statistiques basées sur la séance en elle-même et qui permet de mettre en contexte les autres données.
+
+\begin{itemize}
+    \item \textbf{Durée totale de la session :} [Durée]
+    \item \textbf{Nombre de tours :} [XX]
+    \item \textbf{Températures ambiantes/piste :} [XX °C / XX °C]
+\end{itemize}
+
+Tableau récapitulatif des métriques de base de la session. Permet d'avoir une vue d'ensemble rapide des performances de la voiture et du pilote. Ce sont les données statistiques essentielles des données importantes qui permettent d'analyser la performance globale de la voiture et du pilote.\\
+
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Métrique} & \textbf{Moyenne} & \textbf{Min} & \textbf{Max} & \textbf{Ecart Type} \\
+\midrule
+Temps au tour (s) & [Tmean] & [Tmin] & [Tmax] & [Tstd] \\
+Vitesse moyenne au tour (km/h) & [Vmean] & [Vmin] & [Vmax] & [Vstd] \\
+Vitesse sur la session (km/h) & [Vmean\_session] & [Vmin\_session] & [Vmax\_session] & [Vstd\_session] \\
+Accélération latérale (G) & [Gmean] & [Gmin] & [Gmax] & [Gstd] \\
+\end{tabular}
+
+
+\section{Métriques par Tour}
+
+\subsection{Tableau des métriques par tour}
+\begin{tabular}{lcccc}
+\toprule
+Tour & Temps au tour (s) & Vitesse moyenne (km/h) & Accél. lat. max (G) & Plein gaz (\%) \\
+\midrule
+1 & 97.4 & 143.5 & 1.85 & 72.4 \\
+2 & 96.8 & 144.3 & 1.87 & 73.1 \\
+... & ... & ... & ... & ... \\
+\bottomrule
+\end{tabular}
+
+\vspace{1cm}
+\begin{tabular}{lcccc}
+\toprule
+Tour & Freinage (\%) & L2 angle de braquage (°) & RPM max & Cons. carburant (L) \\
+\midrule
+1 & 21.5 & 34.2 & 11230 & 0.49 \\
+2 & 22.1 & 32.6 & 11320 & 0.48 \\
+... & ... & ... & ... & ... \\
+\bottomrule
+\end{tabular}
+
+\subsection{Graphes des métriques par tour}
+
+Evolution des métriques de base par tour. Permet d'évaluer les tendances des performances de la voiture et du pilote. A mettre en relation avec les événements de course (changements de pilote, pneus, voitures de sécurité\dots) et les conditions de course (conditions météo, état de la piste).
+
+\section{Analyse Comportementale}
+\begin{itemize}
+    \item \textbf{Modulation de l’accélérateur :} [Position moyenne / max / min, Pourcentage du tour en plein gaz] 
+    \item \textbf{Freinage :} [Pression de freinage moyenne, Pourcentage du tour en freinage]
+    \item \textbf{Braquage moyen :} [Angle de braquage moyen, min, max, intégrale de l'angle de braquage par tour (norme L²)]
+    \item \textbf{Utilisation de la boîte de vitesses :} [Nb changements / tour]
+\end{itemize}
+
+\section{Graphiques Clés}
+\vspace{0.5cm}
+\textbf{Run Charts :}
+\begin{itemize}
+    \item Temps au tour vs numéro de tour
+    \item Angle de braquage moyen par tour
+    \item G latéral max par tour
+    \item Plein gaz \(\%\) par tour
+\end{itemize}
+
+\vspace{0.5cm}
+\textbf{Graphiques Distance :}
+\begin{itemize}
+    \item Vitesse vs distance (superposition de 2-3 tours)
+    \item Pression de frein vs distance
+    \item G latéral vs distance
+    \item Angle de braquage vs distance
+\end{itemize}
+
+\section{Notes et Observations}
+\vspace{0.2cm}
+[Commentaires automatiques ou annotations de l’ingénieur.]
+
+\end{document}

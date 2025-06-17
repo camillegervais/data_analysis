@@ -9,7 +9,8 @@ def lapFormating(lap: Lap):
         'time': lap.time,
         'compound': lap.compound.name,
         'date': lap.date,
-        'temperature': lap.temperature,
+        'air_temp': lap.air_temp,
+        'road_temp': lap.road_temp,
         'comments': lap.comments,
         'fuel': lap.fuel,
         'tyrePressure': {
@@ -35,6 +36,7 @@ def lapFormating(lap: Lap):
         },
         'tc_level': lap.tc_level,
         'abs_level': lap.abs_level,
+        'engine_map': lap.engine_map,
         'valid': lap.valid_lap,
         'tyre_set': lap.tyre_set,
         'driver': lap.session.driver.name,
