@@ -300,6 +300,48 @@ def get_metrics_lap_data(dfs, key):
     v_std = round(np.std((np.hstack([df[key] for df in dfs]))), 2)
     return v_mean, v_max, v_min, v_std
 
+def inertial_mapping(df):
+    """
+    Function to generate the speed and the position of the car throughout the lap, using the inertial mapping technique.
+    Requires the DataFrame with telemetry data.
+    """
+    speed = df['speed'].values / 3.6  # Convert speed from km/h to m/s
+    g_lat = df['g_force_0'].values * 9.81
+    time = df['time'].values / 1000  # Convert time from ms to seconds
+
+    # angle, x, y
+    position = [[0, 0, 0]]
+    delta_angle_list = []
+
+    for i in range(1, len(speed)):
+        if g_lat[i] != 0:
+            dt = time[i] - time[i-1]
+            delta_angle = (g_lat[i]/speed[i]**2) * (dt * speed[i])
+            if abs(delta_angle) < np.pi:
+                delta_angle_list.append(delta_angle)
+            else:
+                delta_angle_list.append(0)
+                delta_angle = 0
+        else:
+            delta_angle = 0
+            delta_angle_list.append(0)
+
+        displacement = speed[i] * (time[i] - time[i-1])
+
+        # filter huge displacement
+        if abs(displacement) < 100:
+            position.append([position[-1][0] + delta_angle, 
+                             position[-1][1] + displacement * np.cos(position[-1][0] + delta_angle),
+                             position[-1][2] + displacement * np.sin(position[-1][0] + delta_angle)])
+            
+    # Resolve the case where the final position is not the same as the initial position
+    distance_vector = np.array([position[-1][1] - position[0][1], position[-1][2] - position[0][2]])
+    for i in range(len(position)):
+        position[i][1] -= distance_vector[0]*((i+1)/len(position))
+        position[i][2] -= distance_vector[1]*((i+1)/len(position))
+
+    return np.array(position), np.array(speed)
+
 if __name__ == "__main__":
     pass
     # # Example usage

@@ -6,11 +6,9 @@ from datetime import datetime
 from utils import format_lap_time
 import matplotlib.pyplot as plt
 
-from backend.scripts_analysis.inertial_mapping import inertial_mapping
-
 import numpy as np
 
-from model.level_1.level_1_analysis import *
+from level_1_analysis import *
 import os
 
 def create_report(session_id):
@@ -69,14 +67,14 @@ def create_report(session_id):
     report_content = report_content.replace("[Lap Data]", final_str_tab_1)
     report_content = report_content.replace("[Lap Data 2]", final_str_tab_2)
 
-    position, speed, beacons_position = inertial_mapping(dicts[0]['id'])
+    position, speed = inertial_mapping(dfs[np.argmin([dict['time'] for dict in dicts])])
     plt.scatter(position[:, 1], position[:, 2], s=0.5, c=speed[:position.shape[0]]*3.6, cmap='viridis')  # Color by speed
-    plt.scatter(beacons_position[:, 1], beacons_position[:, 2], c='red', s=10, label='Beacons')  # Plot beacons
     plt.colorbar(label='Speed (km/h)')  # Add a colorbar to show speed scale
     plt.axis('equal')
     plt.xlabel('X Position')
     plt.ylabel('Y Position')
-    plt.imsave(os.path.dirname(report_path) + 'inertial_mapping.png')
+    plt.savefig(os.path.dirname(report_path) + '/inertial_mapping.png')
+    plt.close()
 
     os.makedirs(os.path.dirname(report_path), exist_ok=True)
     with open(report_path, "w", encoding="utf-8") as report_file:
