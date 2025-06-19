@@ -9,12 +9,19 @@
 \usepackage{titlesec}
 \titleformat{\section}{\normalfont\Large\bfseries}{\thesection}{1em}{}
 
+
 \title{\textbf{Rapport Niveau 1 -- Analyse Télémétrique de Base}}
-\author{Motive Dynamics Motorsport Engineering}
+\author{Nova Simracing - Camille GERVAIS}
 \date{\today}
 
 \begin{document}
+\begin{titlepage}
+\begin{center}
+\includegraphics[width=0.3\textwidth]{../../template/logo transparent.png}
+\vspace{1cm}
 \maketitle
+\end{center}
+\end{titlepage}
 
 \section{Résumé de la Session}
 
@@ -34,7 +41,7 @@ Données statistiques basées sur la séance en elle-même et qui permet de mett
 
 \begin{itemize}
     \item \textbf{Durée totale de la session :} [Durée]
-    \item \textbf{Nombre de tours :} [XX]
+    \item \textbf{Nombre de tours :} [Nb Tour]
     \item \textbf{Températures ambiantes/piste :} [XX °C / XX °C]
 \end{itemize}
 
@@ -45,7 +52,6 @@ Tableau récapitulatif des métriques de base de la session. Permet d'avoir une 
 \textbf{Métrique} & \textbf{Moyenne} & \textbf{Min} & \textbf{Max} & \textbf{Ecart Type} \\
 \midrule
 Temps au tour (s) & [Tmean] & [Tmin] & [Tmax] & [Tstd] \\
-Vitesse moyenne au tour (km/h) & [Vmean] & [Vmin] & [Vmax] & [Vstd] \\
 Vitesse sur la session (km/h) & [Vmean\_session] & [Vmin\_session] & [Vmax\_session] & [Vstd\_session] \\
 Accélération latérale (G) & [Gmean] & [Gmin] & [Gmax] & [Gstd] \\
 \end{tabular}
@@ -56,11 +62,9 @@ Accélération latérale (G) & [Gmean] & [Gmin] & [Gmax] & [Gstd] \\
 \subsection{Tableau des métriques par tour}
 \begin{tabular}{lcccc}
 \toprule
-Tour & Temps au tour (s) & Vitesse moyenne (km/h) & Accél. lat. max (G) & Plein gaz (\%) \\
+Tour & Temps au tour (s) & Vitesse max (km/h) & Accél. lat. max (G) & Plein gaz (\%) \\
 \midrule
-1 & 97.4 & 143.5 & 1.85 & 72.4 \\
-2 & 96.8 & 144.3 & 1.87 & 73.1 \\
-... & ... & ... & ... & ... \\
+[Lap Data]
 \bottomrule
 \end{tabular}
 
@@ -69,11 +73,13 @@ Tour & Temps au tour (s) & Vitesse moyenne (km/h) & Accél. lat. max (G) & Plein
 \toprule
 Tour & Freinage (\%) & L2 angle de braquage (°) & RPM max & Cons. carburant (L) \\
 \midrule
-1 & 21.5 & 34.2 & 11230 & 0.49 \\
-2 & 22.1 & 32.6 & 11320 & 0.48 \\
-... & ... & ... & ... & ... \\
+[Lap Data 2]
 \bottomrule
 \end{tabular}
+
+\begin{figure}
+    \includegraphics*{inertial_mapping.png}
+\end{figure}
 
 \subsection{Graphes des métriques par tour}
 

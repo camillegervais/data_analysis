@@ -166,6 +166,21 @@ Le rapport de niveau 1 doit contenir les éléments suivants :
 
 \chapter{Spécifications fonctionnelles}
 
+\section{Structure du projet}
+
+Le projet est structuré en trois parties qui ont chacune une tâche différente.\\ 
+
+Le backend s'occupe de la gestion des données récupérées par le jeu. Il stocke les pilotes, voitures, circuits et tours.
+
+Pour les différents tours il stocke les données de télémétrie sous forme de séries temporelles dans des fichiers h5. Les métadonnées du tour sont quant à elles stockées dans la base de données du backend.
+
+Cette partie du projet est donc responsable de toute la gestion des données entrées par le jeu, elles manipulent les données des fichiers h5 pour faire les rendus de base afin de faire du debug rapide sur les données d'un tour.\\
+
+Le frontend s'occupe de la visualisation des données du backend, toujours pour les données récupérées sur le jeu. Il permet de créer des sessions, les étudier et les renseigner post-course et de visualiser les données des tours. A terme il servira aussi à faire marcher tout le projet avec aussi la partie model.\\
+
+Le model s'occupe de l'analyse des données des tours. Il peut prendre en entrée des données du backend après conversion ou des données venant de MoTeC. Pour les données d'un tour il prend en entrée les données de télématries dans un fichier csv, les métadonnées du tour dans le formet json et les métadonnées de la sessions sous format json aussi.\\
+
+
 \section{Description des couches}
 
 \subsection{Couche 1}

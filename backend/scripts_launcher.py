@@ -1,5 +1,5 @@
 from scripts_analysis.inertial_mapping import inertial_mapping, render_plot
-from scripts_analysis.database_explore import explore_database, exportCSVLap, exportJsonLap, export_lap_data, export_session_data
+from scripts_analysis.database_explore import explore_database, exportCSVLap, exportJsonLap, export_lap_data, export_all_lap_data, export_session_data, export_all_session_data
 from scripts_analysis.lap_plot import traction_circle, speed_plot, set_lap_beacons
 
 import sys
@@ -11,12 +11,43 @@ def debug():
 
     # correctif de l'attribution des temps de secteurs
     
-    # assigner un exemples de beacons aux deux circuits dans la base de données
-    track = Track.objects.get(name='SPA')
+    # Ajout d'une session
+    track = Track.objects.get(name='Circuit Paul Ricard')
     driver = Driver.objects.get(name="Camille")
-    car = Car.objects.get(name="McLaren 720S GT3")
+    car = Car.objects.get(name="Lamborghini Huracan GT3")
     session = Session.objects.create(driver=driver, track=track, car=car, date='2023-10-01', weather='Sunny', session_type='Practice')
     session.save()
+
+    # Ajout d'un circuit dans la base de données
+    # track = Track.objects.create(
+    #     name='Circuit Paul Ricard',
+    #     length=5.791,
+    #     country='France',
+    #     turn=15,
+    # )
+
+    # track.save()
+
+    # Ajout d'une voiture dans la base de données
+    # car = Car.objects.create(
+    #     name='Lamborghini Huracan GT3',
+    #     manufacturer='Lamborghini',
+    #     model='Huracan GT3',
+    #     year=2015,
+    #     weight=1230,
+    #     power=585,
+    #     torque=570,
+    #     top_speed=310,
+    # )
+
+    # car.save()
+
+    # Ajout d'un pilote dans la base de données
+    # driver = Driver.objects.create(
+    #     name='Jules',
+    #     age=15,
+    # )
+    # driver.save()
 
 if __name__ == "__main__":
     import os
@@ -83,16 +114,22 @@ if __name__ == "__main__":
                 print("Enter the lap ID you want to export")
         elif sys.argv[1] == 'export_lap':
             if len(sys.argv) > 2:
-                lap_id = int(sys.argv[2])
-                lap = Lap.objects.get(id=lap_id)
-                json_path, csv_path = export_lap_data(lap)
-                print(f"Lap data exported to {json_path} and {csv_path}")
+                if sys.argv[2] == 'all':
+                    export_all_lap_data()
+                else:
+                    lap_id = int(sys.argv[2])
+                    lap = Lap.objects.get(id=lap_id)
+                    json_path, csv_path = export_lap_data(lap)
+                    print(f"Lap data exported to {json_path} and {csv_path}")
             else:
                 print("Enter the lap ID you want to export")
         elif sys.argv[1] == 'export_session':
             if len(sys.argv) > 2:
-                session_id = int(sys.argv[2])
-                export_session_data(session_id)
+                if sys.argv[2] == 'all':
+                    export_all_session_data()
+                else:
+                    session_id = int(sys.argv[2])
+                    export_session_data(session_id)
             else:
                 print("Enter the session ID you want to export")
         elif sys.argv[1] == 'debug':

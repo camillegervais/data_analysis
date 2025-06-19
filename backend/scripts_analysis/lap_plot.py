@@ -90,11 +90,11 @@ def set_lap_beacons(track_id, beacons):
     if not isinstance(beacons, dict):
         print("Beacons must be a dictionary")
         return False
-    if beacons.get('start')[0] != 0:
+    if beacons.get('start') != 0:
         print("The first value must be zero")
         return False
     for beacon in beacons.values():
-        if int(beacon[1]) > track.length:
+        if int(beacon) > track.length:
             print(f"Beacon {beacon} is out of track length {track.length}")
             return False
         

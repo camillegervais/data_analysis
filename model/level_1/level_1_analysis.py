@@ -111,7 +111,19 @@ def average_value_lap(df, key):
         return df[key].mean()
     else:
         raise KeyError(f"Key '{key}' not found in DataFrame columns.")
-    
+
+def proportion_value_lap(df, key, value):
+    if key in df.columns:
+        return np.sum(np.array(df[key] == value))/np.array(df[key]).size
+    else:
+        raise KeyError(f"Key '{key}' not found in DataFrame columns.")
+
+def proportion_threshold_lap(df, key, value):
+    if key in df.columns:
+        return np.sum(np.array(df[key] > value))/np.array(df[key]).size
+    else:
+        raise KeyError(f"Key '{key}' not found in DataFrame columns.")
+
 def standard_deviation_lap(df, key):
     """
     Calculate the standard deviation of a given key in a DataFrame.
@@ -144,7 +156,7 @@ def median_value_lap(df, key):
     else:
         raise KeyError(f"Key '{key}' not found in DataFrame columns.")
     
-def median_value_session(session_data, key):
+def median_value_session(session_dict, key):
     """
     Calculate the median value of a given key across all laps in a session.
     
@@ -156,7 +168,7 @@ def median_value_session(session_data, key):
         float: The median value of the specified key across all laps.
     """
     values = []
-    for lap in session_data:
+    for lap in session_dict:
         if key in lap:
             values.append(lap[key])
     if values:
@@ -164,7 +176,7 @@ def median_value_session(session_data, key):
     else:
         raise KeyError(f"Key '{key}' not found in session data.")
     
-def l2_norm_session(session_data, key):
+def l2_norm_session(session_dict, key):
     """
     Calculate the L2 norm of a given key across all laps in a session.
     
@@ -176,7 +188,7 @@ def l2_norm_session(session_data, key):
         float: The L2 norm of the specified key across all laps.
     """
     values = []
-    for lap in session_data:
+    for lap in session_dict:
         if key in lap:
             values.append(lap[key])
     if values:
@@ -184,7 +196,7 @@ def l2_norm_session(session_data, key):
     else:
         raise KeyError(f"Key '{key}' not found in session data.")
 
-def max_value_session(session_data, key):
+def max_value_session(session_dict, key):
     """
     Get the maximum value of a given key across all laps in a session.
     
@@ -196,7 +208,7 @@ def max_value_session(session_data, key):
         float: The maximum value of the specified key across all laps.
     """
     values = []
-    for lap in session_data:
+    for lap in session_dict:
         if key in lap:
             values.append(lap[key])
     if values:
@@ -204,7 +216,7 @@ def max_value_session(session_data, key):
     else:
         raise KeyError(f"Key '{key}' not found in session data.")
 
-def min_value_session(session_data, key):
+def min_value_session(session_dict, key):
     """
     Get the minimum value of a given key across all laps in a session.
     
@@ -216,7 +228,7 @@ def min_value_session(session_data, key):
         float: The minimum value of the specified key across all laps.
     """
     values = []
-    for lap in session_data:
+    for lap in session_dict:
         if key in lap:
             values.append(lap[key])
     if values:
@@ -224,7 +236,7 @@ def min_value_session(session_data, key):
     else:
         raise KeyError(f"Key '{key}' not found in session data.")
 
-def average_value_session(session_data, key):
+def average_value_session(session_dict, key):
     """
     Calculate the average value of a given key across all laps in a session.
     
@@ -236,15 +248,32 @@ def average_value_session(session_data, key):
         float: The average value of the specified key across all laps.
     """
     values = []
-    for lap in session_data:
+    for lap in session_dict:
         if key in lap:
             values.append(lap[key])
     if values:
         return np.mean(values)
     else:
         raise KeyError(f"Key '{key}' not found in session data.")
+    
+def sum_value_session(session_dict, key):
+    """
+    Calculate the sum of the value of a given key across all laps in a session.
+    
+    Args:
+        session_data (list): List of dict for each lap in the session.
+        key (str): The key for which to calculate the sum.
+    
+    Returns:
+        float: The sum of the specified key across all laps.
+    """
+    sum = 0
+    for lap in session_dict:
+        if key in lap:
+            sum += lap[key]
+    return sum
 
-def standard_deviation_session(session_data, key):
+def standard_deviation_session(session_dict, key):
     """
     Calculate the standard deviation of a given key across all laps in a session.
     
@@ -256,7 +285,7 @@ def standard_deviation_session(session_data, key):
         float: The standard deviation of the specified key across all laps.
     """
     values = []
-    for lap in session_data:
+    for lap in session_dict:
         if key in lap:
             values.append(lap[key])
     if values:
@@ -264,6 +293,12 @@ def standard_deviation_session(session_data, key):
     else:
         raise KeyError(f"Key '{key}' not found in session data.")
 
+def get_metrics_lap_data(dfs, key):
+    v_mean = round(np.mean(np.array([average_value_lap(df, key) for df in dfs])), 2)
+    v_max = round(np.amax(np.array([max_value_lap(df, key) for df in dfs])), 2)
+    v_min = round(np.amin(np.array([min_value_lap(df, key) for df in dfs])), 2)
+    v_std = round(np.std((np.hstack([df[key] for df in dfs]))), 2)
+    return v_mean, v_max, v_min, v_std
 
 if __name__ == "__main__":
     pass

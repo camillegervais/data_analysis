@@ -112,6 +112,19 @@ def export_lap_data(lap):
     csv_path = exportCSVLap(lap)
     return json_path, csv_path
 
+def export_all_lap_data():
+    laps = Lap.objects.all()
+    counter = 0
+    for lap in laps:
+        print(f"Exporting data of lap {lap.id}")
+        if not os.path.exists(lap.telemetry_file.path.replace('.h5', '.csv')):
+            print(f"Lap not yet exported")
+            counter += 1
+            json_path, csv_path = export_lap_data(lap)
+        else:
+            print("Lap already exported")
+    print(f"{counter} lap exported on {Lap.objects.count()} on the database.")
+
 def export_session_data(session_id):
     """
     Function to export all the information stored in the session object in the databse at the json format.
@@ -130,3 +143,16 @@ def export_session_data(session_id):
     with open(json_path, 'w') as f:
         json.dump(session_data, f)
     return json_path
+
+def export_all_session_data():
+    sessions = Session.objects.all()
+
+    counter = 0
+    for session in sessions:
+        if not os.path.exists(f'./session_data/session_{session.id}_data.json'):
+            print(f"Exporting the data of session {session.id}")
+            counter += 1
+            export_session_data(session.id)
+        else:
+            print(f"Session {session.id} already exported")
+    print(f"{counter} session(s) exported out of {Session.objects.count()} on the database")
