@@ -4,6 +4,8 @@ from scripts_analysis.lap_plot import traction_circle, speed_plot, set_lap_beaco
 
 import sys
 
+import subprocess
+
 from simracing.models import Track, Driver, Session, Car
 
 def debug():
@@ -11,13 +13,6 @@ def debug():
 
     # correctif de l'attribution des temps de secteurs
     
-    # Ajout d'une session
-    track = Track.objects.get(name='Circuit Paul Ricard')
-    driver = Driver.objects.get(name="Camille")
-    car = Car.objects.get(name="Lamborghini Huracan GT3")
-    session = Session.objects.create(driver=driver, track=track, car=car, date='2023-10-01', weather='Sunny', session_type='Practice')
-    session.save()
-
     # Ajout d'un circuit dans la base de données
     # track = Track.objects.create(
     #     name='Circuit Paul Ricard',
@@ -47,6 +42,7 @@ def debug():
     #     name='Jules',
     #     age=15,
     # )
+    
     # driver.save()
 
 if __name__ == "__main__":
@@ -132,6 +128,8 @@ if __name__ == "__main__":
                     export_session_data(session_id)
             else:
                 print("Enter the session ID you want to export")
+        elif sys.argv[1] == 'create_session':
+            subprocess.run(['streamlit', 'run', './scripts_analysis/create_session.py'], cwd='.')
         elif sys.argv[1] == 'debug':
             debug()
         else:
