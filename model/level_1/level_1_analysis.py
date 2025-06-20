@@ -292,6 +292,39 @@ def standard_deviation_session(session_dict, key):
         return np.std(values)
     else:
         raise KeyError(f"Key '{key}' not found in session data.")
+    
+def derivative_value_lap(df, key):
+    """
+    Calculate the derivative of a given key in a DataFrame.
+    
+    Args:
+        df (pd.DataFrame): The DataFrame containing the data.
+        key (str): The key for which to calculate the derivative.
+    
+    Returns:
+        np.ndarray: The derivative of the specified key.
+    """
+    if key in df.columns:
+        return np.gradient(df[key].values, df['time'].values / 1000)  # Assuming 'time' is in milliseconds
+    else:
+        raise KeyError(f"Key '{key}' not found in DataFrame columns.")
+    
+def sliding_window_average_lap(df, key, window_size=5):
+    """
+    Calculate the sliding window average of a given key in a DataFrame. Used for smoothing data or for low pass filtering.
+    
+    Args:
+        df (pd.DataFrame): The DataFrame containing the data.
+        key (str): The key for which to calculate the sliding window average.
+        window_size (int): The size of the sliding window.
+    
+    Returns:
+        np.ndarray: The sliding window average of the specified key.
+    """
+    if key in df.columns:
+        return df[key].rolling(window=window_size, min_periods=1).mean().values
+    else:
+        raise KeyError(f"Key '{key}' not found in DataFrame columns.")
 
 def get_metrics_lap_data(dfs, key):
     v_mean = round(np.mean(np.array([average_value_lap(df, key) for df in dfs])), 2)
