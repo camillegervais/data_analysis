@@ -128,8 +128,8 @@ if __name__ == "__main__":
                     export_session_data(session_id)
             else:
                 print("Enter the session ID you want to export")
-        elif sys.argv[1] == 'create_session':
-            subprocess.run(['streamlit', 'run', './scripts_analysis/create_session.py'], cwd='.')
+        elif sys.argv[1] == 'streamlit':
+            subprocess.run(['streamlit', 'run', './scripts_analysis/database_app.py'], cwd='.')
         elif sys.argv[1] == 'debug':
             debug()
         else:
