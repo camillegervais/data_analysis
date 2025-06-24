@@ -333,6 +333,42 @@ def get_metrics_lap_data(dfs, key):
     v_std = round(np.std((np.hstack([df[key] for df in dfs]))), 2)
     return v_mean, v_max, v_min, v_std
 
+def remove_outliers_df(df, key, n_sigma=3):
+    """
+    Remove outliers from a DataFrame based on a specified key using the Z-score method.
+    
+    Args:
+        df (pd.DataFrame): The DataFrame containing the data.
+        key (str): The key for which to remove outliers.
+        n_sigma (int): The number of standard deviations to use as the threshold for outliers.
+    
+    Returns:
+        pd.DataFrame: The DataFrame with outliers removed.
+    """
+    if key in df.columns:
+        mean = df[key].mean()
+        std = df[key].std()
+        threshold = n_sigma * std
+        return df[(df[key] >= mean - threshold) & (df[key] <= mean + threshold)]
+    else:
+        raise KeyError(f"Key '{key}' not found in DataFrame columns.")
+    
+def remove_outliers_list(data, n_sigma=3):
+    """
+    Remove outliers from a list using the Z-score method.
+    
+    Args:
+        data (list): The list of data points.
+        n_sigma (int): The number of standard deviations to use as the threshold for outliers.
+    
+    Returns:
+        list: The list with outliers removed.
+    """
+    mean = np.mean(data)
+    std = np.std(data)
+    threshold = n_sigma * std
+    return [x for x in data if (mean - threshold) <= x <= (mean + threshold)]
+
 def inertial_mapping(df):
     """
     Function to generate the speed and the position of the car throughout the lap, using the inertial mapping technique.

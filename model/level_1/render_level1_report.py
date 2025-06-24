@@ -78,7 +78,7 @@ def create_report(session_id):
     plt.close()
 
     # Render the plot of the time through the session
-    times = [dict['time'] for dict in dicts]
+    times = remove_outliers_list([dict['time'] for dict in dicts], 3)
     plt.plot(range(1, len(times) + 1), times, marker='o')
     plt.title('Time per Lap')
     plt.xlabel('Lap Number')
