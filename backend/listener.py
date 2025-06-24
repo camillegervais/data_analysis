@@ -7,6 +7,11 @@ import time
 import serial
 import h5py  # Ajout de la bibliothèque pour gérer les fichiers HDF5
 import numpy as np  # Ajout de NumPy pour gérer les tableaux
+import colorama
+from colorama import Fore, Style
+
+# Initialize colorama
+colorama.init()
 
 # Set the settings module
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
@@ -24,21 +29,22 @@ from simracing.data_formating import lapFormating
 def average(list):
     return sum(list)/len(list)
 
+print(Fore.GREEN + "Starting ACC Listener..." + Style.RESET_ALL)
+
+print(Fore.BLUE + "Waiting for shared memory..." + Style.RESET_ALL)
 
 asm = accSharedMemory()
 
 sm = asm.read_shared_memory()
 
-print("Wait for shared memory")
-
 while sm is None:
     sm = asm.read_shared_memory()
 
-print("Shared memory found")
+print(Fore.GREEN + "Shared memory found" + Style.RESET_ALL)
 
 current_lap = sm.Graphics.completed_lap
 
-# channel_layer = get_channel_layer()
+channel_layer = get_channel_layer()
 
 sectors = []
 
@@ -78,20 +84,28 @@ telemetry_data = {
 while True:
     sm = asm.read_shared_memory()
     if sm is not None:
-        #append sector times during the lap
+        # Append sector times during the lap
         if sm.Graphics.current_sector_index != current_sector:
             current_sector = sm.Graphics.current_sector_index
             sectors.append(sm.Graphics.current_time)
+            print(Fore.YELLOW + "--- Sector Completed ---" + Style.RESET_ALL)
+            print(Fore.YELLOW + f"Sector Index: {current_sector}" + Style.RESET_ALL)
+            print(Fore.YELLOW + f"Sector Time: {sm.Graphics.current_time:.2f}s" + Style.RESET_ALL)
 
-        #handle the change of tyres and the number of laps on a tyre set
+        # Handle the change of tyres and the number of laps on a tyre set
         if sm.Graphics.current_tyre_set == current_tyre_set:
             number_lap_tyre += 1
         else:
             current_tyre_set = sm.Graphics.current_tyre_set
             number_lap_tyre = 1
+            print(Fore.CYAN + "--- Tyre Set Changed ---" + Style.RESET_ALL)
+            print(Fore.CYAN + f"New Tyre Set: {current_tyre_set}" + Style.RESET_ALL)
+            print(Fore.CYAN + "Lap Count Reset" + Style.RESET_ALL)
 
-        # Créer un nouveau fichier HDF5 au début d'un nouveau tour
+        # Create a new HDF5 file at the beginning of a new lap
         if current_lap != sm.Graphics.completed_lap:
+
+            os.system('cls' if os.name == 'nt' else 'clear')
 
             current_lap = sm.Graphics.completed_lap
             current_sector = sm.Graphics.current_sector_index
@@ -102,26 +116,38 @@ while True:
             current_h5_filepath = os.path.join("telemetry_data", h5_filename)
             os.makedirs("telemetry_data", exist_ok=True)
             current_h5_file = h5py.File(current_h5_filepath, "w")
-            
+
             if current_h5_file:
-                # Pousser les données accumulées dans le fichier HDF5
+                # Push accumulated data into the HDF5 file
                 for key, data in telemetry_data.items():
                     current_h5_file.create_dataset(key, data=np.array(data))
-                current_h5_file.close()  # Fermer le fichier précédent
+                current_h5_file.close()  # Close the previous file
 
-            # Réinitialiser les tableaux pour le nouveau tour
+            # Reset telemetry data for the new lap
             telemetry_data = {key: [] for key in telemetry_data}
 
-            print(f"Sectors: {sectors}")
+            print(Fore.GREEN + "--- New Lap Started ---" + Style.RESET_ALL)
+            print(Fore.GREEN + f"Lap Number: {current_lap}" + Style.RESET_ALL)
+            print(Fore.GREEN + f"HDF5 File Created: {h5_filename}" + Style.RESET_ALL)
 
-            # Mise en forme des temps de secteur
-            sectors = [
-                sectors[0],
-                sectors[1] - sectors[0],
-                sm.Graphics.last_time - sectors[1]
-            ]
+            print(Fore.MAGENTA + "--- Sector Times ---" + Style.RESET_ALL)
+            for i, sector_time in enumerate(sectors):
+                print(Fore.MAGENTA + f"Sector {i+1}: {sector_time:.2f}s" + Style.RESET_ALL)
 
-            # Ajouter le chemin du fichier HDF5 à l'objet Lap
+            # Format sector times
+            if len(sectors) >= 3:
+                sectors = [
+                    sectors[0],
+                    sectors[1] - sectors[0],
+                    sm.Graphics.last_time - sectors[1]
+                ]
+
+                print(Fore.BLUE + "--- Formatted Sector Times ---" + Style.RESET_ALL)
+                print(Fore.BLUE + f"Sector 1: {sectors[0]:.2f}s" + Style.RESET_ALL)
+                print(Fore.BLUE + f"Sector 2: {sectors[1]:.2f}s" + Style.RESET_ALL)
+                print(Fore.BLUE + f"Sector 3: {sectors[2]:.2f}s" + Style.RESET_ALL)
+
+            # Add HDF5 file path to the Lap object
             info_lap = {
                 'session': Session.objects.all().order_by('id').last(),
                 'time': sm.Graphics.last_time,
@@ -142,19 +168,19 @@ while True:
                 'lap_type': 'Completed',
                 'lap_index_session': sm.Graphics.completed_lap,
                 'lap_index_tyre': current_tyre_set,
-                'sector1': sectors[0],
-                'sector2': sectors[1],
-                'sector3': sectors[2],
+                'sector1': sectors[0] if len(sectors) >= 1 else None,
+                'sector2': sectors[1] if len(sectors) >= 2 else None,
+                'sector3': sectors[2] if len(sectors) >= 3 else None,
                 'tc_level': sm.Graphics.tc_level,
                 'abs_level': sm.Graphics.abs_level,
                 'engine_map': sm.Graphics.engine_map,
                 'valid_lap': sm.Graphics.is_valid_lap,
                 'tyre_set': current_tyre_set,
-                'telemetry_file': current_h5_filepath  # Nouveau champ pour le fichier HDF5
+                'telemetry_file': current_h5_filepath  # New field for the HDF5 file
             }
             Lap.objects.create(**info_lap)
 
-            sectors = []  # Réinitialiser les secteurs pour le nouveau tour
+            sectors = []  # Reset sectors for the new lap
 
             # #send data to channel for follow session
             # async_to_sync(channel_layer.group_send)(
@@ -172,9 +198,9 @@ while True:
             #         "driver": Lap.objects.all().order_by('id').last().session.driver.name,
             #     },
             # )
-            # print('Lap pushed')
+            # print(Fore.GREEN + f"New lap started: Lap {current_lap}. HDF5 file created." + Style.RESET_ALL)
 
-        # Ajouter les données de télémétrie dans les tableaux NumPy
+        # Add telemetry data to the NumPy arrays
         telemetry_data["tyre_pressure"].append([
             sm.Physics.wheel_pressure.front_left,
             sm.Physics.wheel_pressure.front_right,
