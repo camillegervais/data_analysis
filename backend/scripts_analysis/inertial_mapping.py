@@ -18,20 +18,24 @@ def inertial_mapping(lap_id):
     Require the library h5py to read the telemetry file and numpy to manipulate the data.
     '''
     lap = Lap.objects.get(id=lap_id)
-    h5_file = h5py.File(lap.telemetry_file.path, 'r')
-
-    speed = h5_file['speed'][:] / 3.6  # Convert speed from km/h to m/s
-    g_lat = h5_file['g_force'][:, 0]
-    time = h5_file['time'][:] / 100  # Convert time from ms to seconds
-    distance = h5_file['distance'][:]
+    
+    try:
+        with h5py.File(lap.telemetry_file.path, 'r') as h5_file:
+            speed = h5_file['speed'][:] / 3.6  # Convert speed from km/h to m/s
+            g_lat = h5_file['g_force'][:, 0]
+            time = h5_file['time'][:] / 100  # Convert time from ms to seconds
+            distance = h5_file['distance'][:]
+    except Exception as e:
+        print(f"Error reading H5 file: {e}")
+        return None, None, None
 
     # angle, x, y
     position = [[0, 0, 0]]
     delta_angle_list = []
 
     for i in range(len(speed)):
-        if g_lat[i] != 0:
-            dt = time[i] - time[i-1]
+        if g_lat[i] != 0 and speed[i] != 0:  # Avoid division by zero
+            dt = time[i] - time[i-1] if i > 0 else 0
             delta_angle = (g_lat[i]/speed[i]**2) * (dt * speed[i])
             if delta_angle < 1 and delta_angle > -1:
                 delta_angle_list.append(delta_angle)
@@ -42,13 +46,13 @@ def inertial_mapping(lap_id):
             delta_angle = 0
             delta_angle_list.append(0)
 
-        displacement = speed[i] * dt
+        displacement = speed[i] * (time[i] - time[i-1] if i > 0 else 0)
 
         # filter huge displacement
         if abs(displacement) < 100:
             position.append([position[-1][0] + delta_angle, 
-                                position[-1][1] + displacement * np.cos(position[-1][0] + delta_angle),
-                                position[-1][2] + displacement * np.sin(position[-1][0] + delta_angle)])
+                             position[-1][1] + displacement * np.cos(position[-1][0] + delta_angle),
+                             position[-1][2] + displacement * np.sin(position[-1][0] + delta_angle)])
         
     # Resolve the case where the final position is not the same as the initial position
     distance_vector = np.array([position[-1][1] - position[0][1], position[-1][2] - position[0][2]])
@@ -64,13 +68,15 @@ def inertial_mapping(lap_id):
         beacon_index = np.argmin(np.abs(distance - beacon))
         beacons_position.append(position[beacon_index])
 
-    h5_file.close()
-    # Save the position in the h5 file
-    with h5py.File(lap.telemetry_file.path, 'a') as f:
-        if 'position' in f.keys():
-            del f['position']
-        f.create_dataset('position', data=np.array(position))
-        f.close()
+    # Optional: Save the position in the h5 file
+    # To avoid file locking issues, we'll use a separate try-except block
+    # try:
+    #     with h5py.File(lap.telemetry_file.path, 'a') as f:
+    #         if 'position' in f.keys():
+    #             del f['position']
+    #         f.create_dataset('position', data=np.array(position))
+    # except Exception as e:
+    #     print(f"Warning: Could not save position data to H5 file: {e}")
 
     print("Inertial mapping completed")
 
