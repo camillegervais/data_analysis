@@ -50,7 +50,7 @@ modified_track = st.selectbox("Select Track", Track.objects.all(), format_func=l
 
 if modified_track:
     # Display the layout of the track with the inertial mapping of the fastest lap
-    lap = Lap.objects.filter(session__track=modified_track).order_by('time').first()
+    lap = Lap.objects.filter(session__track=modified_track, is_valid=True).order_by('time').first()
     position, speed, beacon_position = inertial_mapping(lap.id)
     fig = go.Figure()
     fig.add_trace(go.Scatter(
