@@ -43,18 +43,6 @@ if 'studied_lap_id' not in st.session_state:
 # Initialize session state for plots with default values if not already set
 if 'plots' not in st.session_state:
     st.session_state["plots"] = default_plots.copy()
-    
-# # Always backup plots right after checking or initializing them
-# if 'plots_backup' not in st.session_state or st.session_state["plots"] != st.session_state.get("plots_backup", []):
-#     st.session_state["plots_backup"] = st.session_state["plots"].copy()
-    
-# def restore_plots():
-#     """Restore plots from backup if needed"""
-#     if "plots_backup" in st.session_state and (not st.session_state["plots"] or len(st.session_state["plots"]) == 0):
-#         st.session_state["plots"] = st.session_state["plots_backup"].copy()
-        
-# # Call restore at the beginning to ensure plots are restored if needed
-# restore_plots()
 
 
 def view_lap_plots(plots_list):
@@ -232,8 +220,6 @@ with st.sidebar:
                 "type": DisplayMode.MAP,
                 "data": data_selected
             })
-        # # Update backup
-        # st.session_state["plots_backup"] = st.session_state["plots"].copy()
         st.rerun()      # Display the current plots in the sidebar with removal buttons
     if st.session_state["plots"]:
         st.write("### Current Plots:")
@@ -264,19 +250,16 @@ with st.sidebar:
         if plots_to_remove:
             for idx in sorted(plots_to_remove, reverse=True):
                 st.session_state["plots"].pop(idx)
-            # st.session_state["plots_backup"] = st.session_state["plots"].copy()
             st.rerun()
         
         col1, col2 = st.columns(2)
         with col1:
             if st.button("Reset to Default"):
                 st.session_state["plots"] = default_plots.copy()
-                # st.session_state["plots_backup"] = st.session_state["plots"].copy()
                 st.rerun()
         with col2:
             if st.button("Clear All"):
                 st.session_state["plots"] = []
-                # st.session_state["plots_backup"] = st.session_state["plots"].copy()
                 st.rerun()
 
 view_lap_plots(st.session_state["plots"])
