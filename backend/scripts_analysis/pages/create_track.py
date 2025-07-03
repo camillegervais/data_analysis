@@ -50,32 +50,35 @@ modified_track = st.selectbox("Select Track", Track.objects.all(), format_func=l
 
 if modified_track:
     # Display the layout of the track with the inertial mapping of the fastest lap
-    lap = Lap.objects.filter(session__track=modified_track, is_valid=True).order_by('time').first()
-    position, speed, beacon_position = inertial_mapping(lap.id)
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(
-        x=[pos[1] for pos in position],
-        y=[pos[2] for pos in position],
-        mode='lines',
-        name='Track Layout',
-    ))
-    fig.add_trace(go.Scatter(
-        x=[pos[1] for pos in beacon_position],
-        y=[pos[2] for pos in beacon_position],
-        mode='markers',
-        name='Beacons',
-        marker=dict(color='red', size=7, symbol='circle'),
-    ))
-    fig.update_layout(
-        title=f"Track Layout for {modified_track.name}",
-        xaxis_title="X Position (m)",
-        yaxis_title="Y Position (m)",
-        yaxis=dict(
-            scaleanchor="x",
-            scaleratio=1,
-        ),
-    )
-    st.plotly_chart(fig, use_container_width=False)
+    try:
+        lap = Lap.objects.filter(session__track=modified_track, valid_lap=True).order_by('time').first()
+        position, speed, beacon_position = inertial_mapping(lap.id)
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(
+            x=[pos[1] for pos in position],
+            y=[pos[2] for pos in position],
+            mode='lines',
+            name='Track Layout',
+        ))
+        fig.add_trace(go.Scatter(
+            x=[pos[1] for pos in beacon_position],
+            y=[pos[2] for pos in beacon_position],
+            mode='markers',
+            name='Beacons',
+            marker=dict(color='red', size=7, symbol='circle'),
+        ))
+        fig.update_layout(
+            title=f"Track Layout for {modified_track.name}",
+            xaxis_title="X Position (m)",
+            yaxis_title="Y Position (m)",
+            yaxis=dict(
+                scaleanchor="x",
+                scaleratio=1,
+            ),
+        )
+        st.plotly_chart(fig, use_container_width=False)
+    except AttributeError as e:
+        st.error("No lap recorded for this track, it is not possible to show the layout...")
 
     beacons = json.loads(modified_track.lap_beacons)
     cols = st.columns(2)
