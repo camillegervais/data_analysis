@@ -1,0 +1,4 @@
+To do list for this project:
+- Plotting different data from a same lap on the same plot with appropriate scale for both signals
+    - Plotting on the same level to compare more precisely (throttle, speed for example)
+    - Plotting on different level for lisibility when a lot of data must be displayed

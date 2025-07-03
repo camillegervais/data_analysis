@@ -40,6 +40,10 @@ if 'studied_lap_id' not in st.session_state:
     # Initialize the studied lap ID to the first lap in the database
     st.session_state['studied_lap_id'] = Lap.objects.first().id if Lap.objects.exists() else None
 
+if 'compared_lap_id' not in st.session_state:
+    # Initialize the compared lap ID to None if not set yet
+    st.session_state['compared_lap_id'] = None
+
 # Initialize session state for plots with default values if not already set
 if 'plots' not in st.session_state:
     st.session_state["plots"] = default_plots.copy()
@@ -58,7 +62,8 @@ def view_lap_plots(plots_list):
         "Compare with another Lap (optional)",
         [None] + list(Lap.objects.all()),
         format_func=lambda x: f"{x.id} - {x.session.car.name} on {x.session.track.name} ({x.session.date})" if x else "None",
-        key='second_lap_select'
+        key='second_lap_select',
+        on_change=lambda: setattr(st.session_state, 'compared_lap_id', compared_lap.id if compared_lap else None)
     )
     
     if compared_lap and selected_lap.id == compared_lap.id:
@@ -76,7 +81,7 @@ def view_lap_plots(plots_list):
     else:
         st.write(f"# Telemetry Data for Lap {selected_lap.id}")
     
-    # Render all plots from the session state
+    # Render all plots from the session state, if any exist
     if not plots_list or len(plots_list) == 0:
         st.warning("No plots to display. Add plots using the sidebar controls.")
         return
@@ -86,19 +91,32 @@ def view_lap_plots(plots_list):
         try:
             with h5py.File(selected_lap.telemetry_file.path, 'r') as h5_file:
                 plot_type = data_type["type"].value
-                # Handle plot type comparison for both Enum and string values
-                    
+                # Check the type of plot we want to display
                 if plot_type == DisplayMode.PLOT.value:
                     # Check if data exists in the H5 file before plotting
-                    if data_type["data"] not in h5_file:
+                    if data_type["data"] not in h5_file and data_type["data"] not in ['time_variance']:
                         st.error(f"Data key '{data_type['data']}' not found in telemetry file")
                         continue
-                    
-                    if len(h5_file[data_type["data"]][:].shape) > 1:  # Check if data has multiple dimensions
-                        plot_multiaxis_telemetry(data_type["data"], selected_lap.telemetry_file.path)
-                    else:
+
+                    # If the data key is not in the h5 file, it is a mathematical operation
+                    if data_type["data"] not in list(h5_file.keys()):
+                        if data_type["data"] == 'time_variance':
+                            # Check if we have a comparison lap for time variance
+                            if compared_lap and compared_lap.telemetry_file:
+                                plot_telemetry_data(data_type["data"], selected_lap.telemetry_file.path, 
+                                    compared_lap.telemetry_file.path)
+                            else:
+                                st.warning("Time variance requires a second lap for comparison. Please select a lap to compare with.")
+                        else:
+                            # Handle the case in which the channel is not supported yet
+                            st.error(f"The channel you want to display is not supported yet...")
+                    # If the data as only one component, plot it directly
+                    elif len(h5_file[data_type["data"]][:].shape) == 1:  # Check if data has multiple dimensions
                         plot_telemetry_data(data_type["data"], selected_lap.telemetry_file.path, 
-                                          compared_lap.telemetry_file.path if compared_lap and compared_lap.telemetry_file else None)
+                    compared_lap.telemetry_file.path if compared_lap and compared_lap.telemetry_file else None)
+                    # If the data has multiple components, plot it as a multiaxis plot
+                    else:
+                        plot_multiaxis_telemetry(data_type["data"], selected_lap.telemetry_file.path)
                 elif plot_type == DisplayMode.SCATTER.value:
                     plot_scatter_data(data_type["data_x"], data_type["data_y"], selected_lap.telemetry_file.path, selected_lap.id)
                 elif plot_type == DisplayMode.MAP.value:
@@ -115,12 +133,15 @@ def view_lap_plots(plots_list):
             print(traceback.format_exc())
             continue
 
-
+################################################################################################################""
+# Streamlit app configuration
+################################################################################################################
 st.set_page_config(page_title="Lap Telemetry Viewer", page_icon=":chart_with_upwards_trend:", layout="wide")
 
 st.title("View Lap Telemetry Plots")
 st.write("Select a lap to view telemetry plots.")
 
+# Display the side bar for adding plots
 with st.sidebar:
     st.write("### Add a plot:")
     # Generate a unique key for each interaction
@@ -136,23 +157,45 @@ with st.sidebar:
         key=f'plot_type_select_{interaction_id}',
     )
     if type_of_plot == DisplayMode.PLOT:
-        st.write("### Choose the data you want to visualize")
-        data_selected = st.radio("Select Telemetry Data",
-            [
-                'speed',
-                'throttle',
-                'brake',
-                'steering_angle',
-                'rpm',
-                'g_force',
-                'suspension_travel',
-                'slip_angle',
-                'tyre_pressure'
-            ],
-            format_func=lambda x: x.capitalize(),
-            key=f'telemetry_data_select_{interaction_id}',
-            index=0
-        )
+        if not st.session_state['compared_lap_id']:
+            st.write("### Choose the data you want to visualize")
+            data_selected = st.radio("Select Telemetry Data",
+                [
+                    'speed',
+                    'throttle',
+                    'brake',
+                    'steering_angle',
+                    'rpm',
+                    'g_force',
+                    'suspension_travel',
+                    'slip_angle',
+                    'tyre_pressure',
+                    'time_variance'  # Added time_variance option for single lap too
+                ],
+                format_func=lambda x: "Time Variance (requires comparison lap)" if x == 'time_variance' else x.capitalize(),
+                key=f'telemetry_data_select_{interaction_id}',
+                index=0
+            )
+        else:
+            # Plot data using both lap in the computation
+            st.write("### Choose the data you want to visualize")
+            data_selected = st.radio("Select Telemetry Data",
+                [
+                    'speed',
+                    'throttle',
+                    'brake',
+                    'steering_angle',
+                    'rpm',
+                    'g_force',
+                    'suspension_travel',
+                    'slip_angle',
+                    'tyre_pressure',
+                    'time_variance'
+                ],
+                format_func=lambda x: x.capitalize(),
+                key=f'telemetry_data_select_{interaction_id}',
+                index=0
+            )
     elif type_of_plot == DisplayMode.SCATTER:
         st.write("### Choose the data you want to visualize")
         data_selected_1 = st.radio("Select X-Axis Data",
@@ -263,7 +306,3 @@ with st.sidebar:
                 st.rerun()
 
 view_lap_plots(st.session_state["plots"])
-
-# Debugging information (only visible in terminal/logs)
-print(f"Number of plots in session_state: {len(st.session_state['plots'])}")
-print(f"Plots: {st.session_state['plots']}")
