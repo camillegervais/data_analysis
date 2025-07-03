@@ -76,7 +76,6 @@ def inertial_mapping(lap_id):
 if __name__ == "__main__":
     lap_id = 120  # Replace with the actual lap ID you want to process
     position, speed, beacons = inertial_mapping(lap_id)
-    print(position.shape)
     plt.scatter(beacons[:, 0], beacons[:, 1], s=100, c='red', label='Beacons')  # Plot beacons
     plt.scatter(position[:, 1], position[:, 2], s=0.5, c=speed[:position.shape[0]]*3.6, cmap='viridis')  # Color by speed
     plt.colorbar(label='Speed (km/h)')  # Add a colorbar to show speed scale
