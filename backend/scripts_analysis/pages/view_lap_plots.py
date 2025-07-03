@@ -24,6 +24,7 @@ from enum import Enum
 from scripts_analysis.streamlit_plotting import plot_multiaxis_telemetry, plot_telemetry_data, plot_scatter_data, render_inertial_mapping
 
 class DisplayMode(Enum):
+    PLOT_MULTI_CHANNEL="plot_multi_channel"
     PLOT="plot"
     SCATTER="scatter"
     MAP="map"
@@ -33,7 +34,7 @@ default_plots = [
     {"type": DisplayMode.MAP, "data": "speed"},
     {"type": DisplayMode.SCATTER, "data_x": "g_force_0", "data_y": "g_force_1"},
     {"type": DisplayMode.PLOT, "data": "speed"},
-    {"type": DisplayMode.PLOT, "data": "tyre_pressure"}
+    {"type": DisplayMode.PLOT_MULTI_CHANNEL, "data": "tyre_pressure"}
 ]
 
 if 'studied_lap_id' not in st.session_state:
@@ -93,29 +94,28 @@ def view_lap_plots(plots_list):
                 plot_type = data_type["type"].value
                 # Check the type of plot we want to display
                 if plot_type == DisplayMode.PLOT.value:
-                    # Check if data exists in the H5 file before plotting
-                    if data_type["data"] not in h5_file and data_type["data"] not in ['time_variance']:
-                        st.error(f"Data key '{data_type['data']}' not found in telemetry file")
-                        continue
 
-                    # If the data key is not in the h5 file, it is a mathematical operation
-                    if data_type["data"] not in list(h5_file.keys()):
-                        if data_type["data"] == 'time_variance':
-                            # Check if we have a comparison lap for time variance
-                            if compared_lap and compared_lap.telemetry_file:
-                                plot_telemetry_data(data_type["data"], selected_lap.telemetry_file.path, 
-                                    compared_lap.telemetry_file.path)
-                            else:
-                                st.warning("Time variance requires a second lap for comparison. Please select a lap to compare with.")
-                        else:
-                            # Handle the case in which the channel is not supported yet
-                            st.error(f"The channel you want to display is not supported yet...")
+                    plot_telemetry_data(data_type["data"], selected_lap.telemetry_file.path, 
+                                    compared_lap.telemetry_file.path if compared_lap else None)
+
+                    # # If the data key is not in the h5 file, it is a mathematical operation
+                    # if data_type["data"] not in list(h5_file.keys()):
+                    #     if data_type["data"] == 'time_variance':
+                    #         # Check if we have a comparison lap for time variance
+                    #         if compared_lap and compared_lap.telemetry_file:
+                    #             plot_telemetry_data(data_type["data"], selected_lap.telemetry_file.path, 
+                    #                 compared_lap.telemetry_file.path)
+                    #         else:
+                    #             st.warning("Time variance requires a second lap for comparison. Please select a lap to compare with.")
+                    #     else:
+                    #         # Handle the case in which the channel is not supported yet
+                    #         st.error(f"The channel you want to display is not supported yet...")
                     # If the data as only one component, plot it directly
-                    elif len(h5_file[data_type["data"]][:].shape) == 1:  # Check if data has multiple dimensions
-                        plot_telemetry_data(data_type["data"], selected_lap.telemetry_file.path, 
-                    compared_lap.telemetry_file.path if compared_lap and compared_lap.telemetry_file else None)
-                    # If the data has multiple components, plot it as a multiaxis plot
-                    else:
+                    # elif len(h5_file[data_type["data"]][:].shape) == 1:  # Check if data has multiple dimensions
+                    #     plot_telemetry_data(data_type["data"], selected_lap.telemetry_file.path, 
+                    # compared_lap.telemetry_file.path if compared_lap and compared_lap.telemetry_file else None)
+                    # # If the data has multiple components, plot it as a multiaxis plot
+                elif plot_type == DisplayMode.PLOT_MULTI_CHANNEL:
                         plot_multiaxis_telemetry(data_type["data"], selected_lap.telemetry_file.path)
                 elif plot_type == DisplayMode.SCATTER.value:
                     plot_scatter_data(data_type["data_x"], data_type["data_y"], selected_lap.telemetry_file.path, selected_lap.id)
@@ -149,6 +149,7 @@ with st.sidebar:
     
     type_of_plot = st.radio("Select the type of plot you want to add",
         [
+            DisplayMode.PLOT_MULTI_CHANNEL,
             DisplayMode.PLOT,
             DisplayMode.SCATTER,
             DisplayMode.MAP
@@ -157,45 +158,40 @@ with st.sidebar:
         key=f'plot_type_select_{interaction_id}',
     )
     if type_of_plot == DisplayMode.PLOT:
-        if not st.session_state['compared_lap_id']:
-            st.write("### Choose the data you want to visualize")
-            data_selected = st.radio("Select Telemetry Data",
+        st.write("### Choose the data you want to visualize")
+        number_of_plot = st.number_input(
+            "Number of plots",
+            min_value=1,
+            max_value=3
+        )
+        selections = []
+        for i in range(number_of_plot):
+            selections.append(st.multiselect("Select Telemetry Data",
                 [
                     'speed',
                     'throttle',
                     'brake',
                     'steering_angle',
                     'rpm',
-                    'g_force',
-                    'suspension_travel',
-                    'slip_angle',
-                    'tyre_pressure',
                     'time_variance'  # Added time_variance option for single lap too
                 ],
                 format_func=lambda x: "Time Variance (requires comparison lap)" if x == 'time_variance' else x.capitalize(),
-                key=f'telemetry_data_select_{interaction_id}',
-                index=0
-            )
-        else:
-            # Plot data using both lap in the computation
-            st.write("### Choose the data you want to visualize")
-            data_selected = st.radio("Select Telemetry Data",
-                [
-                    'speed',
-                    'throttle',
-                    'brake',
-                    'steering_angle',
-                    'rpm',
-                    'g_force',
-                    'suspension_travel',
-                    'slip_angle',
-                    'tyre_pressure',
-                    'time_variance'
-                ],
-                format_func=lambda x: x.capitalize(),
-                key=f'telemetry_data_select_{interaction_id}',
-                index=0
-            )
+                key=f'telemetry_data_select_{interaction_id}_{i}',
+                default=['speed']
+            ))
+    elif type_of_plot == DisplayMode.PLOT_MULTI_CHANNEL:
+        st.write("### Choose the data you want to visualize")
+        data_selected = st.radio("Select Telemetry Data",
+            [
+                'suspension_travel',
+                'slip_angle',
+                'slip_ratio',
+                'tyre_pressure',
+            ],
+            format_func=lambda x: x.capitalize(),
+            key=f'telemetry_data_select_{interaction_id}',
+            index=0
+        )
     elif type_of_plot == DisplayMode.SCATTER:
         st.write("### Choose the data you want to visualize")
         data_selected_1 = st.radio("Select X-Axis Data",
@@ -250,6 +246,11 @@ with st.sidebar:
         if type_of_plot == DisplayMode.PLOT:
             st.session_state["plots"].append({
                 "type": DisplayMode.PLOT,
+                "data": selections
+            })
+        elif type_of_plot == DisplayMode.PLOT_MULTI_CHANNEL:
+            st.session_state["plots"].append({
+                "type": DisplayMode.PLOT_MULTI_CHANNEL,
                 "data": data_selected
             })
         elif type_of_plot == DisplayMode.SCATTER:

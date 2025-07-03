@@ -16,16 +16,16 @@ from scripts_analysis.analysis_utils import rolling_average, remove_outliers, co
 from scripts_analysis.inertial_mapping import inertial_mapping  # Importing inertial mapping function
 from enum import Enum
 
-def plot_telemetry_data(key, file_path1, file_path2=None):
+def plot_telemetry_data(keys, file_path1, file_path2=None):
     """
     Structure for the key argument: the goal is to allow the user to have different plot with the same options and to allow multiple datas in a same plot.
     key is a list of list, the first list corresponds to each plot in this section and each element of the lsit is a list containing all the data plotted in the graph.
     """
     # Generate a unique identifier for this plot
-    plot_id = f"{key}_{hash(file_path1)}"
+    plot_id = f"{keys[0][0]}_{hash(file_path1)}"
     
     # Create options for data processing
-    st.write(f"## {key.capitalize()} Telemetry Data")
+    st.write(f"## Telemetry Data")
     options = st.expander(f"Options")
     with options:
         cols = st.columns(1)
@@ -38,145 +38,347 @@ def plot_telemetry_data(key, file_path1, file_path2=None):
             if outliers:
                 threshold = st.slider("Number of Neighbors for LOF", min_value=1, max_value=50, value=3, key=f'outlier_threshold_{plot_id}')
 
-    # prepare data for plotting
-    # data_series = [] # is a list of all the plots in this graph, each element is a tuple (data_serie, distance_serie)
-    multiple_lap_plot = False
-    nb_outliers = 0
     interpolation_method = "first_as_reference"  # Default interpolation method
-    try:
-        # Check if we're plotting time variance
-        if key == 'time_variance':
-            # Time variance requires two laps for comparison
-            if file_path2 is None:
-                st.warning("Time variance requires two laps for comparison. Please select a second lap to compare.")
-                return
-                
-            print('Plot Time Variance')
-            with h5py.File(file_path1, 'r') as h5_file, h5py.File(file_path2, 'r') as h5_file2:
-                # Get time data from both laps
-                time1 = h5_file['time'][:-20]
-                time2 = h5_file2['time'][:-20]
-                distance1 = h5_file['distance'][:-20]
-                distance2 = h5_file2['distance'][:-20]
-                
-                # Add interpolation method selection
-                with options:
-                    interpolation_method = st.selectbox(
-                        "Interpolation Method",
-                        ["first_as_reference", "union", "intersection"],
-                        format_func=lambda x: {
-                            "first_as_reference": "Use first lap as reference",
-                            "union": "Use all distance points from both laps",
-                            "intersection": "Use only common distance points"
-                        }[x],
-                        key=f'interpolation_method_{key}'
-                    )
-                
-                # Use common_distance_serie to get aligned data
-                common_distances, time1_common, time2_common = common_distance_serie(
-                    np.array(distance1), 
-                    np.array(time1), 
-                    np.array(distance2), 
-                    np.array(time2),
-                    method=interpolation_method
-                )
-                
-                # Calculate time variance
-                main_data = time1_common - time2_common
-                distance_data = common_distances
-                
-                if filtering:
-                    raw_data = main_data.copy()
-                    main_data = rolling_average(main_data, window_size=width)
-                if outliers:
-                    main_data, nb_outliers = remove_outliers(main_data, n_neighbors=threshold)
-                    
-                # Time variance is always a comparison plot
-                multiple_lap_plot = True
-        else:
-            # Standard telemetry data - single lap
-            with h5py.File(file_path1, 'r') as h5_file:
-                main_data = h5_file[key][:]
-                distance_data = h5_file['distance'][:]
 
-                if filtering:
-                    raw_data = main_data.copy()
-                    main_data = rolling_average(main_data, window_size=width)
-                if outliers:
-                    main_data, nb_outliers = remove_outliers(main_data, n_neighbors=threshold)
+    for plot in keys:
+        # prepare data for plotting
+        data_series = [] # is a list of all the plots in this graph, each element is a tuple (type_data, data_serie, distance_serie)
+        multiple_lap_plot = False
+        nb_outliers_sum = 0
 
-            # Second lap selected, comparison between two laps
-            if file_path2:
-                multiple_lap_plot = True
-                with h5py.File(file_path2, 'r') as h5_file2:
-                    main_data2 = h5_file2[key][:]
-                    distance_data2 = h5_file2['distance'][:]
+        for i, key in enumerate(plot):
+            try:
+                # Check if we're plotting time variance
+                if key == 'time_variance':
+                    # Time variance requires two laps for comparison
+                    if file_path2 is None:
+                        st.warning("Time variance requires two laps for comparison. Please select a second lap to compare.")
+                        return
+                        
+                    with h5py.File(file_path1, 'r') as h5_file, h5py.File(file_path2, 'r') as h5_file2:
+                        # Get time data from both laps
+                        time1 = h5_file['time'][:-20]
+                        time2 = h5_file2['time'][:-20]
+                        distance1 = h5_file['distance'][:-20]
+                        distance2 = h5_file2['distance'][:-20]
+                        
+                        # Add interpolation method selection
+                        with options:
+                            interpolation_method = st.selectbox(
+                                "Interpolation Method",
+                                ["first_as_reference", "union", "intersection"],
+                                format_func=lambda x: {
+                                    "first_as_reference": "Use first lap as reference",
+                                    "union": "Use all distance points from both laps",
+                                    "intersection": "Use only common distance points"
+                                }[x],
+                                key=f'interpolation_method_{key}'
+                            )
+                        
+                        # Use common_distance_serie to get aligned data
+                        common_distances, time1_common, time2_common = common_distance_serie(
+                            np.array(distance1), 
+                            np.array(time1), 
+                            np.array(distance2), 
+                            np.array(time2),
+                            method=interpolation_method
+                        )
+                        
+                        # Calculate time variance
+                        main_data = time1_common - time2_common
+                        distance_data = common_distances
+                        
+                        if filtering:
+                            raw_data = main_data.copy()
+                            main_data = rolling_average(main_data, window_size=width)
+                        if outliers:
+                            main_data, nb_outliers = remove_outliers(main_data, n_neighbors=threshold)
+                            nb_outliers_sum += nb_outliers
+                        if filtering:
+                            data_series.append(("time_variance_filtered", [raw_data, main_data, distance_data]))
+                        else:
+                            data_series.append(("time_variance", [main_data, distance_data]))
 
-                    if filtering:
-                        raw_data2 = main_data2.copy()
-                        main_data2 = rolling_average(main_data2, window_size=width)
-                    if outliers:
-                        main_data2, nb_outliers2 = remove_outliers(main_data2, n_neighbors=threshold)
-                    
+                        # Time variance is always a comparison plot
+                        multiple_lap_plot = True
+                else:
+                    # Standard telemetry data - single lap
+                    with h5py.File(file_path1, 'r') as h5_file:
+                        main_data = h5_file[key][:]
+                        distance_data = h5_file['distance'][:]
+
+                        if filtering:
+                            raw_data = main_data.copy()
+                            main_data = rolling_average(main_data, window_size=width)
+                        if outliers:
+                            main_data, nb_outliers = remove_outliers(main_data, n_neighbors=threshold)
+                            nb_outliers_sum += nb_outliers
+
+                    # Second lap selected, comparison between two laps
+                    if file_path2:
+                        multiple_lap_plot = True
+                        with h5py.File(file_path2, 'r') as h5_file2:
+                            main_data2 = h5_file2[key][:]
+                            distance_data2 = h5_file2['distance'][:]
+
+                            if filtering:
+                                raw_data2 = main_data2.copy()
+                                main_data2 = rolling_average(main_data2, window_size=width)
+                            if outliers:
+                                main_data2, nb_outliers2 = remove_outliers(main_data2, n_neighbors=threshold)
+                                nb_outliers_sum += nb_outliers2
+                            if filtering:
+                                data_series.append(("comparison_filtered", [raw_data, main_data, distance_data, raw_data2, main_data2, distance_data2], key))
+                            else:
+                                data_series.append(("comparison", [main_data, distance_data, main_data2, distance_data2], key))
+                    else:
+                        if filtering:
+                            data_series.append(("single_filtered", [raw_data, main_data, distance_data], key))
+                        else:
+                            data_series.append(("single", [main_data, distance_data], key))
+            except Exception as e:
+                st.error(f"Error plotting telemetry data for {key}: {str(e)}")
+                import traceback
+                print(traceback.format_exc())
+
         # plotting
         fig = go.Figure()
-        
-        if key == 'time_variance':
-            # Time variance plot using interpolated data
-            fig.add_trace(go.Scatter(
-                x=distance_data, 
-                y=main_data, 
-                mode='lines', 
-                name=f'Time Variance (Lap 1 - Lap 2)',
-                line=dict(color='purple', width=2)
-            ))
+
+        # Configure the layout for multiple y-axes
+        yaxis_config = {}
+        num_series = len(data_series)
+
+        # Définition d'une palette de couleurs distinctes pour chaque type de données
+        colors = {
+            'time_variance': 'purple',
+            'time_variance_filtered': 'purple',
+            'speed': '#1f77b4',
+            'throttle': '#2ca02c',
+            'brake': '#d62728',
+            'g_force_0': '#ff7f0e',
+            'g_force_1': '#9467bd',
+            'steering_angle': '#8c564b',
+            'rpm': '#e377c2',
+            'tyre_pressure': '#7f7f7f',
+            'suspension_travel': '#bcbd22',
+            'wheel_speed': '#17becf'
+        }
+        # Couleurs pour les traces de comparaison
+        lap1_color = '#1f77b4'  # bleu
+        lap2_color = '#d62728'  # rouge
+
+        for i, serie in enumerate(data_series):
+            type_plot = serie[0]
+            # Set y-axis position based on index
+            y_position = i / num_series if num_series > 1 else 0
+            y_height = 1 / num_series if num_series > 1 else 1
             
-            # Add zero line for reference
-            fig.add_trace(go.Scatter(
-                x=[min(distance_data), max(distance_data)],
-                y=[0, 0],
-                mode='lines',
-                name='Reference',
-                line=dict(color='black', width=1, dash='dash')
-            ))
+            # Configure this y-axis
+            axis_name = f"yaxis{i+1}" if i > 0 else "yaxis"
+            # Déterminer la clé pour obtenir la couleur
+            key_for_color = serie[2] if len(serie) > 2 else None
             
-            fig.update_layout(
-                title=f"Time Variance - {interpolation_method.replace('_', ' ').title()}",
-                xaxis_title="Distance (m)",
-                yaxis_title="Time Difference (s)",
-                yaxis=dict(zeroline=True)
+            # Titre de l'axe Y
+            axis_title = f"{serie[2].capitalize() if len(serie) > 2 else 'Value'}" if type_plot not in ['time_variance', 'time_variance_filtered'] else "Time Difference (s)"
+            
+            # Configuration de l'axe Y
+            yaxis_config[axis_name] = dict(
+                title=axis_title,
+                tickfont=dict(size=12),
+                # Utiliser des positions fixes plutôt que des domaines pour placer les axes à l'extérieur
+                side="left" if i % 2 == 0 else "right",
+                position=0 if i % 2 == 0 else 1,  # 0 = à gauche, 1 = à droite
+                anchor="free",
+                overlaying="y" if i > 0 else None,
+                showgrid=True,
+                gridwidth=1,
+                gridcolor='rgba(230,230,230,0.8)'
             )
-        elif multiple_lap_plot:
-            # Regular comparison plot without interpolation
-            fig.add_trace(go.Scatter(x=distance_data, y=main_data, mode='lines', name=f'{key.capitalize()} Lap 1'))
-            fig.add_trace(go.Scatter(x=distance_data2, y=main_data2, mode='lines', name=f'{key.capitalize()} Lap 2'))
-            if filtering:
-                fig.add_trace(go.Scatter(x=distance_data, y=raw_data, mode='lines', name=f'{key.capitalize()} Lap 1 (Raw)', line=dict(dash='dash')))
-                fig.add_trace(go.Scatter(x=distance_data2, y=raw_data2, mode='lines', name=f'{key.capitalize()} Lap 2 (Raw)', line=dict(dash='dash')))
-            fig.update_layout(
-                title="Telemetry Data Comparison",
-                xaxis_title="Distance (m)",
-                yaxis_title=f"{key.capitalize()} (units)",
+
+            if type_plot == 'time_variance_filtered':
+                raw_data, main_data, distance_data = serie[1]
+
+                # Time variance plot using interpolated data
+                fig.add_trace(go.Scatter(
+                    x=distance_data, 
+                    y=main_data, 
+                    mode='lines', 
+                    name=f'Time Variance (Lap 1 - Lap 2)',
+                    line=dict(color='purple', width=2),
+                    yaxis=f"y{i+1}" if i > 0 else "y"
+                ))
+
+                fig.add_trace(go.Scatter(
+                    x=distance_data, 
+                    y=raw_data, 
+                    mode='lines', 
+                    name=f'Time Variance (Raw)',
+                    line=dict(color='#ff7f0e', width=2, dash='dash'),
+                    yaxis=f"y{i+1}" if i > 0 else "y"
+                ))
+                
+                # Add zero line for reference
+                fig.add_trace(go.Scatter(
+                    x=[min(distance_data), max(distance_data)],
+                    y=[0, 0],
+                    mode='lines',
+                    name='Reference',
+                    line=dict(color='black', width=1, dash='dash'),
+                    yaxis=f"y{i+1}" if i > 0 else "y"
+                ))
+            
+            elif type_plot == 'time_variance':
+                main_data, distance_data = serie[1]
+
+                # Time variance plot using interpolated data
+                fig.add_trace(go.Scatter(
+                    x=distance_data, 
+                    y=main_data, 
+                    mode='lines', 
+                    name=f'Time Variance (Lap 1 - Lap 2)',
+                    line=dict(color='purple', width=2),
+                    yaxis=f"y{i+1}" if i > 0 else "y"
+                ))
+                
+                # Add zero line for reference
+                fig.add_trace(go.Scatter(
+                    x=[min(distance_data), max(distance_data)],
+                    y=[0, 0],
+                    mode='lines',
+                    name='Reference',
+                    line=dict(color='black', width=1, dash='dash'),
+                    yaxis=f"y{i+1}" if i > 0 else "y"
+                ))
+
+            elif type_plot == 'comparison_filtered':
+                raw_data, main_data, distance_data, raw_data2, main_data2, distance_data2 = serie[1]
+                key = serie[2]
+
+                # Utiliser la couleur spécifique au type de données si disponible
+                trace_color = colors.get(key, lap1_color)           
+                
+                # Regular comparison plot without interpolation
+                fig.add_trace(go.Scatter(
+                    x=distance_data, 
+                    y=main_data, 
+                    mode='lines', 
+                    name=f'{key.capitalize()} Lap 1', 
+                    line=dict(color=trace_color, width=2),
+                    yaxis=f"y{i+1}" if i > 0 else "y"
+                ))
+                
+                fig.add_trace(go.Scatter(
+                    x=distance_data2, 
+                    y=main_data2, 
+                    mode='lines', 
+                    name=f'{key.capitalize()} Lap 2', 
+                    line=dict(color=lap2_color, width=2),
+                    yaxis=f"y{i+1}" if i > 0 else "y"
+                ))
+                
+                fig.add_trace(go.Scatter(
+                    x=distance_data, 
+                    y=raw_data, 
+                    mode='lines', 
+                    name=f'{key.capitalize()} Lap 1 (Raw)', 
+                    line=dict(color=trace_color, width=1, dash='dash'),
+                    yaxis=f"y{i+1}" if i > 0 else "y"
+                ))
+                
+                fig.add_trace(go.Scatter(
+                    x=distance_data2, 
+                    y=raw_data2, 
+                    mode='lines', 
+                    name=f'{key.capitalize()} Lap 2 (Raw)', 
+                    line=dict(color=lap2_color, width=1, dash='dash'),
+                    yaxis=f"y{i+1}" if i > 0 else "y"
+                ))
+            
+            elif type_plot == 'comparison':
+                main_data, distance_data, main_data2, distance_data2 = serie[1]
+                key = serie[2]
+
+                # Utiliser la couleur spécifique au type de données si disponible
+                trace_color = colors.get(key, lap1_color)
+                
+                # Regular comparison plot without interpolation
+                fig.add_trace(go.Scatter(
+                    x=distance_data, 
+                    y=main_data, 
+                    mode='lines', 
+                    name=f'{key.capitalize()} Lap 1', 
+                    line=dict(color=trace_color, width=2),
+                    yaxis=f"y{i+1}" if i > 0 else "y"
+                ))
+                
+                fig.add_trace(go.Scatter(
+                    x=distance_data2, 
+                    y=main_data2, 
+                    mode='lines', 
+                    name=f'{key.capitalize()} Lap 2', 
+                    line=dict(color=lap2_color, width=2),
+                    yaxis=f"y{i+1}" if i > 0 else "y"
+                ))
+                
+            elif type_plot == 'single_filtered':
+                raw_data, main_data, distance_data = serie[1]
+                key = serie[2]
+
+                # Utiliser la couleur spécifique au type de données si disponible
+                trace_color = colors.get(key, lap1_color)
+                
+                fig.add_trace(go.Scatter(
+                    x=distance_data, 
+                    y=main_data, 
+                    mode='lines', 
+                    name=key.capitalize(), 
+                    line=dict(color=trace_color, width=2),
+                    yaxis=f"y{i+1}" if i > 0 else "y"
+                ))
+                
+                fig.add_trace(go.Scatter(
+                    x=distance_data, 
+                    y=raw_data, 
+                    mode='lines', 
+                    name=f'{key.capitalize()} (Raw)', 
+                    line=dict(color='blue', width=1, dash='dash'),
+                    yaxis=f"y{i+1}" if i > 0 else "y"
+                ))
+                
+            elif type_plot == 'single':
+                main_data, distance_data = serie[1]
+                key = serie[2]
+
+                # Utiliser la couleur spécifique au type de données si disponible
+                trace_color = colors.get(key, lap1_color)
+                
+                fig.add_trace(go.Scatter(
+                    x=distance_data, 
+                    y=main_data, 
+                    mode='lines', 
+                    name=key.capitalize(), 
+                    line=dict(color=trace_color, width=2),
+                    yaxis=f"y{i+1}" if i > 0 else "y"
+                ))
+
+        # Update layout with all y-axis configurations
+        fig.update_layout(
+            title="Telemetry Data Visualization",
+            xaxis_title="Distance (m)",
+            **yaxis_config,
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=1.02,
+                xanchor="right",
+                x=1
             )
-        else:
-            # Single lap plot
-            fig.add_trace(go.Scatter(x=distance_data, y=main_data, mode='lines', name=key.capitalize()))
-            if filtering:
-                fig.add_trace(go.Scatter(x=distance_data, y=raw_data, mode='lines', name=f'{key.capitalize()} (Raw)', line=dict(dash='dash')))
-            fig.update_layout(
-                title="Telemetry Data",
-                xaxis_title="Distance (m)",
-                yaxis_title=f"{key.capitalize()} (units)",
-            )
+        )
 
         st.plotly_chart(fig)
         if outliers:
-            st.write(f"Number of outliers removed: {nb_outliers}")
-        st.divider()
-    except Exception as e:
-        st.error(f"Error plotting telemetry data for {key}: {str(e)}")
-        import traceback
-        print(traceback.format_exc())
+            st.write(f"Number of outliers removed: {nb_outliers_sum}")
+    st.divider()
 
 
 def plot_multiaxis_telemetry(key, file_path1):
