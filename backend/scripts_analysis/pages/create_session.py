@@ -63,10 +63,17 @@ if last_session:
         st.write(f"**Date**: {last_session.date}")
         st.write(f"**Weather**: {last_session.weather}")
         st.write(f"**Session Type**: {last_session.session_type}")
+        wheel = st.checkbox("Use steering wheel", key='steering_wheel', value=True)
+        redis = st.checkbox("Use Redis", key='redis', value=False)
         listener = st.button("Launch Listener", key="launch_listener")
 if listener:
     try:
-        process = subprocess.Popen(['C:\\Program Files\\Git\\bin\\bash.exe', './launch-listener.sh'], cwd='..', creationflags=subprocess.CREATE_NEW_CONSOLE)
+        command = ['C:\\Program Files\\Git\\bin\\bash.exe', './launch-listener.sh']
+        if wheel:
+            command.append('--wheel')
+        if redis:
+            command.append('--redis')
+        process = subprocess.Popen(command, cwd='..', creationflags=subprocess.CREATE_NEW_CONSOLE)
         st.success("Launching listener in another window...")
         process.wait()  # Wait for the process to complete
         st.success("Listener window closed successfully!")

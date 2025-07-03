@@ -1,10 +1,14 @@
 from pyaccsharedmemory import accSharedMemory
 import os
 import django
-# import pyvjoy
+import sys
+
+import pyvjoy
+import serial
+import serial.tools.list_ports
+import struct
 
 import time
-import serial
 import h5py  # Ajout de la bibliothèque pour gérer les fichiers HDF5
 import numpy as np  # Ajout de NumPy pour gérer les tableaux
 import colorama
@@ -26,12 +30,61 @@ import datetime
 
 from simracing.data_formating import lapFormating
 
+time.sleep(0.5)
+
+redis = False
+wheel = False
+if '--redis' in sys.argv:
+    redis = True
+    print(Fore.BLUE + "Redis will be activated" + Style.RESET_ALL)
+if '--wheel' in sys.argv:
+    wheel = True
+    print(Fore.BLUE + "Steering wheel will be used" + Style.RESET_ALL)
+
+
 def average(list):
     return sum(list)/len(list)
 
-print(Fore.GREEN + "Starting ACC Listener..." + Style.RESET_ALL)
+print(Fore.RED + "Starting ACC Listener..." + Style.RESET_ALL)
 
 print(Fore.BLUE + "Waiting for shared memory..." + Style.RESET_ALL)
+
+if redis:
+    channel_layer = get_channel_layer()
+    print(Fore.GREEN + "Redis channel set up" + Style.RESET_ALL)
+
+# Setup all the hardware for the communication with the steering wheel
+if wheel:
+    j = pyvjoy.VJoyDevice(1)
+    # useful functions
+    def average(list):
+        return sum(list)/len(list)
+
+    # on établit la communication série avec l'Arduino
+    baud = 115200
+    arduino = serial.Serial(port = "COM10", baudrate = baud, timeout=1)
+    # Format string for struct packing
+    # !: network byte order (big-endian)
+    # B: unsigned char (1 byte) - for gear, flags, levels
+    # f: float (4 bytes) - for pressures
+    # l: long (4 bytes) - for time values in milliseconds
+    # h: short (2 bytes) - for position, lap, speed
+    DATA_FORMAT = "<BhBfffflBlBBllfBBfhh"
+
+    # Function to calculate CRC-8
+    def calculate_crc(data):
+        crc = 0
+        for byte in data:
+            crc ^= byte
+            for _ in range(8):
+                if crc & 0x80:
+                    crc = (crc << 1) ^ 0x07
+                else:
+                    crc <<= 1
+                crc &= 0xFF
+        return crc
+
+    print(Fore.GREEN + "Steering wheel set up" + Style.RESET_ALL)
 
 asm = accSharedMemory()
 
@@ -43,8 +96,6 @@ while sm is None:
 print(Fore.GREEN + "Shared memory found" + Style.RESET_ALL)
 
 current_lap = sm.Graphics.completed_lap
-
-channel_layer = get_channel_layer()
 
 sectors = []
 
@@ -83,6 +134,75 @@ telemetry_data = {
 
 while True:
     sm = asm.read_shared_memory()
+
+    # logic for the steering wheel
+    if wheel:
+        # initialize variables
+        rpm_percent = 0
+        pad_wear = 0
+
+        # if the Arduino is connected
+        if arduino.isOpen():
+            # send game data if it is running
+            if sm is not None:
+                # format data for the Arduino
+                flags = ((int(sm.Physics.tc) & 1) << 4) | ((int(sm.Physics.abs) & 1) << 3) | (sm.Physics.pit_limiter_on << 2) | (sm.Graphics.is_valid_lap << 1) | sm.Graphics.is_delta_positive
+                if not sm.Static.max_rpm == 0:
+                    rpm_percent = int((sm.Physics.rpm/sm.Static.max_rpm)*100)
+                pad_wear = round(average([sm.Physics.wheel_pressure.front_left, 
+                                        sm.Physics.wheel_pressure.front_right, 
+                                        sm.Physics.wheel_pressure.rear_left, 
+                                        sm.Physics.wheel_pressure.rear_right]), 1)
+
+                # Add input validation and type conversion before packing
+                data = struct.pack(DATA_FORMAT,
+                    int(sm.Physics.gear) & 0xFF,                    # 1 byte
+                    int(sm.Physics.speed_kmh),                      # 2 bytes
+                    int(flags),                                     # 1 byte flags
+                    float(sm.Physics.wheel_pressure.front_left),    # 4 bytes
+                    float(sm.Physics.wheel_pressure.front_right),   # 4 bytes
+                    float(sm.Physics.wheel_pressure.rear_left),     # 4 bytes
+                    float(sm.Physics.wheel_pressure.rear_right),    # 4 bytes
+                    int(abs(sm.Graphics.delta_lap_time)),           # 4 bytes
+                    rpm_percent & 0xFF,                             # 1 byte
+                    int(sm.Graphics.best_time),                     # 4 bytes
+                    int(sm.Physics.fuel) & 0xFF,                    # 1 byte
+                    int(sm.Graphics.tc_level) & 0xFF,               # 1 byte
+                    int(sm.Graphics.gap_ahead),                     # 4 bytes
+                    int(sm.Graphics.last_time),                     # 4 bytes
+                    float(pad_wear),                                # 4 bytes
+                    int(sm.Graphics.abs_level) & 0xFF,              # 1 byte
+                    int(sm.Graphics.tc_level) & 0xFF,               # 1 byte
+                    float(sm.Physics.brake_bias),                   # 4 bytes
+                    int(sm.Graphics.position),                      # 2 bytes
+                    int(sm.Graphics.completed_lap)                  # 2 bytes
+                )
+
+                # Calculate CRC and append it to the data
+                crc = calculate_crc(data)
+                data += struct.pack('B', crc)
+
+                # Send packed data with CRC
+                arduino.write(data)
+            else:
+                # Send disconnection signal - single byte
+                arduino.write(struct.pack('!B', 0xFF))
+
+            # Read and process Arduino commands
+            while arduino.in_waiting == 0:  # Wait for bytes to be available
+                time.sleep(0.001)
+            if arduino.in_waiting >= 2:  # Check if at least 2 bytes are available
+                command = arduino.read(2)  # Read exactly 2 bytes
+                try:
+                    button_state = struct.unpack('<H', command)[0]
+                    j.data.lButtons = button_state
+                    j.update()
+                except struct.error:
+                    print("Error unpacking command")
+            else:
+                command = None  # No data available
+
+    # logic for the listener in h5 files
     if sm is not None:
         # Append sector times during the lap
         if sm.Graphics.current_sector_index != current_sector:
@@ -182,23 +302,24 @@ while True:
 
             sectors = []  # Reset sectors for the new lap
 
-            # #send data to channel for follow session
-            # async_to_sync(channel_layer.group_send)(
-            #     "follow-session",
-            #     {
-            #         "type": "add.lap",
-            #         "id": Lap.objects.filter(session=Session.objects.all().order_by('id').last()).count()+1,
-            #         "time": sm.Graphics.last_time,
-            #         "temp": sm.Physics.air_temp,
-            #         "fuel": sm.Physics.fuel,
-            #         "compound": "dry_compound",
-            #         "session_id": Session.objects.all().order_by('id').last().id,
-            #         "lap_number": sm.Graphics.completed_lap,
-            #         "track": Lap.objects.all().order_by('id').last().session.track.name,
-            #         "driver": Lap.objects.all().order_by('id').last().session.driver.name,
-            #     },
-            # )
-            # print(Fore.GREEN + f"New lap started: Lap {current_lap}. HDF5 file created." + Style.RESET_ALL)
+            if redis:
+                #send data to channel for follow session
+                async_to_sync(channel_layer.group_send)(
+                    "follow-session",
+                    {
+                        "type": "add.lap",
+                        "id": Lap.objects.filter(session=Session.objects.all().order_by('id').last()).count()+1,
+                        "time": sm.Graphics.last_time,
+                        "temp": sm.Physics.air_temp,
+                        "fuel": sm.Physics.fuel,
+                        "compound": "dry_compound",
+                        "session_id": Session.objects.all().order_by('id').last().id,
+                        "lap_number": sm.Graphics.completed_lap,
+                        "track": Lap.objects.all().order_by('id').last().session.track.name,
+                        "driver": Lap.objects.all().order_by('id').last().session.driver.name,
+                    },
+                )
+                print(Fore.GREEN + f"New lap started: Lap {current_lap}. HDF5 file created." + Style.RESET_ALL)
 
         # Add telemetry data to the NumPy arrays
         telemetry_data["tyre_pressure"].append([

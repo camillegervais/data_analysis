@@ -1,4 +1,2 @@
 To do list for this project:
-- Plotting different data from a same lap on the same plot with appropriate scale for both signals
-    - Plotting on the same level to compare more precisely (throttle, speed for example)
-    - Plotting on different level for lisibility when a lot of data must be displayed
+- Offering the possibiity to mix simple component and multiple components data in the same plot(could be done by cretaing functions to add_trace)
