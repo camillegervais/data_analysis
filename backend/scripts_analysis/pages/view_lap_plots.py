@@ -115,7 +115,7 @@ def view_lap_plots(plots_list):
                     #     plot_telemetry_data(data_type["data"], selected_lap.telemetry_file.path, 
                     # compared_lap.telemetry_file.path if compared_lap and compared_lap.telemetry_file else None)
                     # # If the data has multiple components, plot it as a multiaxis plot
-                elif plot_type == DisplayMode.PLOT_MULTI_CHANNEL:
+                elif plot_type == DisplayMode.PLOT_MULTI_CHANNEL.value:
                         plot_multiaxis_telemetry(data_type["data"], selected_lap.telemetry_file.path)
                 elif plot_type == DisplayMode.SCATTER.value:
                     plot_scatter_data(data_type["data_x"], data_type["data_y"], selected_lap.telemetry_file.path, selected_lap.id)
