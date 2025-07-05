@@ -66,6 +66,12 @@ if last_session:
         wheel = st.checkbox("Use steering wheel", key='steering_wheel', value=True)
         redis = st.checkbox("Use Redis", key='redis', value=False)
         listener = st.button("Launch Listener", key="launch_listener")
+    comments = st.text_area("Comments", value=last_session.comments, key="comments")
+    if st.button("Save Comments", key="save_comments"):
+        last_session.comments = comments
+        last_session.save()
+        st.success("Comments saved successfully!")
+
 if listener:
     try:
         command = ['C:\\Program Files\\Git\\bin\\bash.exe', './launch-listener.sh']

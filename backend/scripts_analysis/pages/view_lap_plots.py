@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../.
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
 django.setup()
 
-from simracing.models import Lap, Track
+from simracing.models import Lap, Track, Session
 from scripts_analysis.analysis_utils import rolling_average, remove_outliers
 from scripts_analysis.inertial_mapping import inertial_mapping  # Importing inertial mapping function
 from enum import Enum
@@ -33,8 +33,29 @@ class DisplayMode(Enum):
 default_plots = [
     {"type": DisplayMode.MAP, "data": "speed"},
     {"type": DisplayMode.SCATTER, "data_x": "g_force_0", "data_y": "g_force_1"},
-    {"type": DisplayMode.PLOT, "data": "speed"},
+    {"type": DisplayMode.PLOT, "data": [["speed"]]},
     {"type": DisplayMode.PLOT_MULTI_CHANNEL, "data": "tyre_pressure"}
+]
+
+presets = [
+    [
+        {"type": DisplayMode.MAP, "data": "speed"},
+        {"type": DisplayMode.PLOT, "data": [["speed", "throttle", "brake"], ["rpm", "steering_angle"]]},
+        {"type": DisplayMode.SCATTER, "data_x": "g_force_0", "data_y": "g_force_1"},
+        {"type": DisplayMode.PLOT_MULTI_CHANNEL, "data": "tyre_pressure"}
+    ],
+    [
+        {"type": DisplayMode.MAP, "data": "g_force_0"},
+        {"type": DisplayMode.PLOT, "data": [["steering_angle"]]},
+        {"type": DisplayMode.SCATTER, "data_x": "throttle", "data_y": "brake"},
+        {"type": DisplayMode.PLOT_MULTI_CHANNEL, "data": "suspension_travel"}
+    ],
+    [
+        {"type": DisplayMode.MAP, "data": "steering_angle"},
+        {"type": DisplayMode.PLOT, "data": [["slip_ratio"], ["slip_angle"]]},
+        {"type": DisplayMode.SCATTER, "data_x": "speed", "data_y": "steering_angle"},
+        {"type": DisplayMode.PLOT_MULTI_CHANNEL, "data": "slip_ratio"}
+    ]
 ]
 
 if 'studied_lap_id' not in st.session_state:
@@ -52,16 +73,25 @@ if 'plots' not in st.session_state:
 
 def view_lap_plots(plots_list):
     # st.session_state.setdefault('studied_lap_id', Lap.objects.first().id)
+    session_options = ["All"] + list(Session.objects.all())
+    filter_session = st.selectbox(
+        "Filter by Session",
+        session_options,
+        index=session_options.index(Session.objects.get(id=Lap.objects.get(id=st.session_state.studied_lap_id).session.id)) if 'studied_lap_id' in st.session_state else 0,
+        format_func=lambda x: f"{x.id} - {x.car.name} on {x.track.name} ({x.date})" if x != "All" else x,
+        key='session_filter_select',
+    )
+    lap_options = list(Lap.objects.all() if filter_session == "All" else Lap.objects.filter(session=filter_session))
     selected_lap = st.selectbox(
         "Select Lap",
-        list(Lap.objects.all()),
+        lap_options,
         format_func=lambda x: f"{x.id} - {x.session.car.name} on {x.session.track.name} ({x.session.date})",
-        index=(list(Lap.objects.all()).index(Lap.objects.get(id=st.session_state.studied_lap_id)) if 'studied_lap_id' in st.session_state else 0),
+        index=(lap_options.index(Lap.objects.get(id=st.session_state.studied_lap_id)) if 'studied_lap_id' in st.session_state else 0) if filter_session == "All" else 0,
         key='first_lap_select',
         on_change=lambda: setattr(st.session_state, 'studied_lap_id', selected_lap.id if selected_lap else Lap.objects.first().id)    )
     compared_lap = st.selectbox(
         "Compare with another Lap (optional)",
-        [None] + list(Lap.objects.all()),
+        [None] + lap_options,
         format_func=lambda x: f"{x.id} - {x.session.car.name} on {x.session.track.name} ({x.session.date})" if x else "None",
         key='second_lap_select',
         on_change=lambda: setattr(st.session_state, 'compared_lap_id', compared_lap.id if compared_lap else None)
@@ -304,6 +334,10 @@ with st.sidebar:
         with col2:
             if st.button("Clear All"):
                 st.session_state["plots"] = []
+                st.rerun()
+        for preset in presets:
+            if st.button(f"Load Preset {presets.index(preset) + 1}"):
+                st.session_state["plots"] = preset.copy()
                 st.rerun()
 
 view_lap_plots(st.session_state["plots"])

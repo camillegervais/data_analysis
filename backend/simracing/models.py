@@ -38,7 +38,8 @@ class Session(models.Model):
     car = models.ForeignKey(Car, on_delete=models.CASCADE)
     date = models.DateField(default=datetime.date.today)
     weather = models.CharField(max_length=255, default="")
-    session_type = models.CharField(max_length=255, default='Started')#'Started' -> 'Checked'
+    session_type = models.CharField(max_length=255, default='Practice')
+    comments = models.TextField(default="")
 
 class Lap(models.Model):
     id = models.AutoField(primary_key=True)
